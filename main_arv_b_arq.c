@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "debugger.h"
 #include "arv_b_arq.h"
 
