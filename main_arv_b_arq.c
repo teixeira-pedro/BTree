@@ -1,28 +1,21 @@
 //
-//  arv_b_arq.h
+//  main_arv_b_arq.c
 //  
 //
 //  Created by Pedro Teixeira on 16/06/17.
 //
 //
 
-const int t = 2;
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "debugger.h"
 #include "arv_b_arq.h"
 
+int narq=0;//nome "incremental" do arquivo
 
-
-FILE *Cria(int t,char *nome){
-    TAB* novo = (TAB*)malloc(sizeof(TAB));
+int void main(argc,argv){
     
-    novo->nchaves = 0;
-    novo->chave =(int*)malloc(sizeof(int*)*((t*2)-1));
-    novo->folha=1;
-    novo->filho = NULL;
-    int i;
-    return nome;
-    
+    return 0;
 }
+
+

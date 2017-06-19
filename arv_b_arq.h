@@ -12,14 +12,20 @@
 
 typedef struct arvore_b{
     int nchaves, folha, *chave;
-    struct char *filho;
-}Arv_B;
+    struct char **filho;
+}TAB;
 
-FILE *Cria(int t,char *nome);
-void Libera(TAB *a);
-void Imprime(char *nome, int andar);
+/*
+    estrutura básica de árvore b, qtd de chaves, se é folha ou não, e ponteiro para o vetor de chaves
+    ponteiro para o endereço do arquivo contendo os filhos
+ 
+*/
+
+char *Cria(int t,char *nome);//TESTAR
+void Libera(char *nome); //TESTAR
+void Imprime(char *nome, int andar);//TESTAR
 TAB *Busca(char* x, int ch);
-TAB *Inicializa();
+TAB *Inicializa();      //TESTAR
 TAB *Divisao(char *x, int i, char* y, int t);
 void Insere_Nao_Completo(char *x, int k, int t);
 void Insere(char *t, int k, int t);
