@@ -57,11 +57,12 @@ TAB *Libera_no(TAB *a){
     if(!a) return a;
     if(!a->folha){
         int i;
-        for(i=0;i<((a->nchaves+1)*2);i++) if(a->filho[i]) free(a->filho[i]);
+        for(i=0;i<((a->nchaves))+1;i++) if(a->filho[i]) free(a->filho[i]);
     }
     free(a->chave);
     free(a->filho);
     free(a);
+    printf("poww!");
     return NULL;
 }
 
