@@ -68,7 +68,6 @@ char *Cria(TAB *no, char *nome){
         strcpy(aux, no->filho[i]);
         aux[strlen(aux)] = '\n';
         aux[strlen(aux) + 1] = '\0';
-        printf("%s", aux);
         fputs(aux, fp);                                                  // grava a string efetivamente
     }
     fclose(fp);                                                          //fecha o arq 
@@ -191,16 +190,73 @@ TAB *Busca(char* x, int ch){
 }
 
 TAB *pega_filho(TAB *arv, int qualFilho){
-  if(!arv){
-    printf("Erro no pega_filho: Árvore vazia.\n");
-    return NULL;
-  }
-  TAB *resp = recupera(arv->filho[qualFilho]);
-  if(!resp) {
-    printf("Erro no pega_filho: Erro ao ler filho.\n");
-    return NULL;
-  }
-  return resp;
+    if(!arv){
+        printf("Erro no pega_filho: Árvore vazia.\n");
+        return NULL;
+    }
+    TAB *resp = recupera(arv->filho[qualFilho]);
+    if(!resp) {
+        printf("Erro no pega_filho: Erro ao ler filho.\n");
+        return NULL;
+    }
+    return resp;
+}
+
+char *pega_filho_arq(char *nArq, int qualFilho){
+    // TESTADO - pergola
+    if(!nArq){
+        printf("Erro no pega_filho_arq: nome vazio.\n");
+        return NULL;
+    }
+    
+    FILE *fp = fopen(nArq, "rb");
+    int nchaves, i;
+    fread(&nchaves, sizeof(int), 1, fp);              // lê quantas chaves tem
+    if (nchaves == 0){
+        printf("Erro no pega_filho_arq: Arquivo de entrada vazio.\n");
+        return NULL;
+    }
+    
+    // posiciona o ponteiro do stream no inicio da string do primeiro filho
+    fseek(fp, (sizeof(int)*nchaves + 2*sizeof(int)), SEEK_SET);     // + 1 pelo int de nchaves e + 1 pelo int de folha (+2 no total)
+    
+    char aux [90];
+    char *resp = (char *)malloc(sizeof(char) * 90);
+    for (i = 0; i <= qualFilho; i++)  fgets(aux, 90, fp);
+    aux[strlen(aux) - 1] = '\0';    // tira o "\n" e substitui por "\0", assim n vai bugar pras próximas funções que usarem o nome do arquivo
+    strcpy(resp, aux);
+    fclose(fp);
+    
+    if(!resp) {
+        printf("Erro no pega_filho_arq: Erro ao ler filho.\n");
+        return NULL;
+    }
+    printf("Pega ar filho: %s\n", resp);
+    return resp;
+}
+
+void Imprime_ms(char *nome, int andar){
+    
+    if(!nome) return;
+    FILE *fp = fopen(nome, "rb");
+    if (!fp) return;
+    // imprime recursivamente
+    int nchaves, chave, i, j, folha;
+    fread(&nchaves, sizeof(int), 1, fp);
+    fread(&folha, sizeof(int), 1, fp);
+    
+    for (i = 0; i < nchaves; i++){
+        if (folha == 0) Imprime_ms(pega_filho_arq(nome, i), andar + 1);     // só continua a imprimir recursivamente se não for folha
+        for(j = 0; j < andar; j++) printf("\t");
+        fread(&chave, sizeof(int), 1, fp);
+        printf("%d", chave);
+        printf("\n");
+    }
+    
+    if (folha == 0) Imprime_ms(pega_filho_arq(nome, i), andar +1);     // imprime ultimo arquivo
+    fclose(fp);
+    
+    
 }
 
 void remover(char *nArq, int ch, int t){
@@ -291,8 +347,8 @@ TAB *Insere(char *n_T, int k, int t,int *nome_atual){
 
 TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t,int *nome_atual){
   //eu gravo cada atualização no arquivo!
-  TAB *z=Cria_no(t);
-  char n_z[90];//ADD CODIGO QUE incrementa nome para novo arquivo criado 
+  TAB *z = Cria_no(t);
+  char n_z[90]; //ADD CODIGO QUE incrementa nome para novo arquivo criado 
   *nome_atual++;      //*****************
   sprintf(&n_z,"%d",nome_atual);  
   z->nchaves= t - 1;

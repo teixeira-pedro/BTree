@@ -1,28 +1,8 @@
-//
-//  arv_b_arq.c
-//
-//
-//  Created by Pedro Teixeira on 16/06/17.
-//
-//
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "arv_b_arq.h"
 
-/*
- =====================================LOG=====================================
-
-***[PP-DÚVIDA]*** Após recuperar os nós dos arquivos, deve-se dar free neles ? R: Não, por que faria isso? Damos free quando não precisamos mais só. -pergola
-***[PP-WARNING]*** possiveis bugs na questão dos endereços char dos filhos ... irei verificar[@ D2]
-***[PP-DÚVIDA]*** cond de parada correta?? [@ D1]
-***[NQ-DÚVIDA]*** Verificar se isso funciona na função da Rosseti [@ D4]
-
-
- =====================================LOG=====================================
-*/
 
 TAB *Cria_no(int t){
     int i;
@@ -68,7 +48,6 @@ char *Cria(TAB *no, char *nome){
         strcpy(aux, no->filho[i]);
         aux[strlen(aux)] = '\n';
         aux[strlen(aux) + 1] = '\0';
-        printf("%s", aux);
         fputs(aux, fp);                                                  // grava a string efetivamente
     }
     fclose(fp);                                                          //fecha o arq 
@@ -130,19 +109,21 @@ void imprime_data(TAB *a){
 }
 
 void Imprime(char *nome, int andar){
-    if(!nome) return;                           // vê se o arq existe
-    TAB *a=recupera(nome);                      // recupera do arquivo
-    if(a){                                      // imprime recsvmt.
+    if(!nome) return;                                   // vê se o arq existe
+    TAB *a = recupera(nome);                            // recupera do arquivo
+    if(a){                                              // imprime recursivamente.
         int i,j;
-        for(i=0; i<a->nchaves; i++){            // cond de parada correta?? Não seria i<=a->nchaves ? [D1] - Nein.
-            Imprime(a->filho[i],andar+1);
+        for(i = 0; i < a->nchaves; i++){            // cond de parada correta?? Não seria i<=a->nchaves ? [D1] - Nein.
+            Imprime(a->filho[i],andar+1);           // filhos da esquerda
             for(j=0; j<=andar; j++) printf("   ");
             printf("%d\n", a->chave[i]);
         }
-        Imprime(a->filho[i],andar+1);
+        Imprime(a->filho[i],andar+1);               // filho da direita
     }
     Libera_no(a);                               //"Free" na MP [D3]
 }
+
+
 
 void Libera(char *nome){
     if(!nome) exit(-1);
@@ -191,24 +172,132 @@ TAB *Busca(char* x, int ch){
 }
 
 TAB *pega_filho(TAB *arv, int qualFilho){
-  if(!arv){
-    printf("Erro no pega_filho: Árvore vazia.\n");
-    return NULL;
-  }
-  TAB *resp = recupera(arv->filho[qualFilho]);
-  if(!resp) {
-    printf("Erro no pega_filho: Erro ao ler filho.\n");
-    return NULL;
-  }
-  return resp;
+    if(!arv){
+        printf("Erro no pega_filho: Árvore vazia.\n");
+        return NULL;
+    }
+    TAB *resp = recupera(arv->filho[qualFilho]);
+    if(!resp) {
+        printf("Erro no pega_filho: Erro ao ler filho.\n");
+        return NULL;
+    }
+    return resp;
+}
+
+char *pega_filho_arq(char *nArq, int qualFilho){
+    // TESTADO - pergola
+    if(!nArq){
+        printf("Erro no pega_filho_arq: nome vazio.\n");
+        return NULL;
+    }
+    
+    FILE *fp = fopen(nArq, "rb");
+    int nchaves, i;
+    fread(&nchaves, sizeof(int), 1, fp);              // lê quantas chaves tem
+    if (nchaves == 0){
+        printf("Erro no pega_filho_arq: Arquivo de entrada vazio.\n");
+        return NULL;
+    }
+    
+    // posiciona o ponteiro do stream no inicio da string do primeiro filho
+    fseek(fp, (sizeof(int)*nchaves + 2*sizeof(int)), SEEK_SET);     // + 1 pelo int de nchaves e + 1 pelo int de folha (+2 no total)
+    
+    char aux [90];
+    char *resp = (char *)malloc(sizeof(char) * 90);
+    for (i = 0; i <= qualFilho; i++) {
+        fgets(aux, 90, fp);
+        
+    }
+    aux[strlen(aux) - 1] = '\0';    // tira o "\n" e substitui por "\0", assim n vai bugar pras próximas funções que usarem o nome do arquivo
+    strcpy(resp, aux);
+    fclose(fp);
+    
+    if(!resp) {
+        printf("Erro no pega_filho_arq: Erro ao ler filho.\n");
+        return NULL;
+    }
+    //printf("Pega ar filho: %s\n", resp);
+    return resp;
+}
+
+void Imprime_ms(char *nome, int andar){
+    
+    if(!nome) return;
+    FILE *fp = fopen(nome, "rb");
+    if (!fp) return;
+    // imprime recursivamente
+    int nchaves, chave, i, j, folha;
+    fread(&nchaves, sizeof(int), 1, fp);
+    fread(&folha, sizeof(int), 1, fp);
+    
+    for (i = 0; i < nchaves; i++){
+        if (folha == 0) Imprime_ms(pega_filho_arq(nome, i), andar + 1);     // só continua a imprimir recursivamente se não for folha
+        for(j = 0; j < andar; j++) printf("\t");
+        fread(&chave, sizeof(int), 1, fp);
+        printf("%d", chave);
+        printf("\n");
+    }
+    
+    if (folha == 0) Imprime_ms(pega_filho_arq(nome, i), andar +1);     // imprime ultimo arquivo
+    fclose(fp);
+    
+    
 }
 
 int main (){
+    
+    /** Testa criar, salvar e carrega um arquivo raiz **/
+    TAB *raiz = Cria_no(2);
     printf("Arvore B\n");
     printf("Insira chave inicial: \n");
-    int chave = 0;
-    scanf("%d", &chave);
-    printf("Chave inicial = %d", chave);
+    scanf("%d", &raiz->chave[0]);
+    printf("Insira chave segunda inicial: \n");
+    scanf("%d", &raiz->chave[1]);
+    raiz->nchaves = 2;
+    raiz->folha = 0;
+    raiz->filho[0] = "meufilho1.dat";
+    raiz->filho[1] = "meufilho2.dat";
+    raiz->filho[2] = "meufilho3.dat";
+    Cria(raiz, "minharaiz.dat");
+    Libera_no(raiz);
+    raiz = recupera("minharaiz.dat");
+    
+    
+    /** Testa criar, salvar e carregar filhos do arquivo raiz criado **/
+    TAB *filho1 = Cria_no(2);
+    TAB *filho2 = Cria_no(2);
+    TAB *filho3 = Cria_no(2);
+    
+    printf("Insira chave do filho1: \n");
+    scanf("%d", &filho1->chave[0]);
+    printf("Insira chave do filho2: \n");
+    scanf("%d", &filho2->chave[0]);
+    printf("Insira chave do filho3: \n");
+    scanf("%d", &filho3->chave[0]);
+    
+    filho1-> nchaves = 1;
+    filho2-> nchaves = 1;
+    filho3-> nchaves = 1;
+    
+    filho1-> folha = 1;
+    filho2-> folha = 1;
+    filho3-> folha = 1;
+    
+    Cria(filho1, "meufilho1.dat");
+    Cria(filho2, "meufilho2.dat");
+    Cria(filho3, "meufilho3.dat");
+    
+    Libera_no(filho1);
+    Libera_no(filho2);
+    Libera_no(filho3);
+    
+    Libera_no(raiz);
+    
+    printf("\n\t\tImprimindo...\t\n ");
+    
+    /** Testa imprimir **/
+    Imprime_ms("minharaiz.dat", 0);
+    
     return 0;
 }
 
