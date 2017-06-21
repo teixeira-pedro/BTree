@@ -35,7 +35,7 @@ TAB *Cria_no(int t){
     return n;
 }
 
-char *Cria(TAB *no,char *nome){
+char *Cria(TAB *no, char *nome){
     
     /*
     salvaremos os arquivos da seguinte forma:
@@ -52,49 +52,63 @@ char *Cria(TAB *no,char *nome){
     +------------+
     
     **/
-
+    
     if((!no)||(!nome)) return NULL; 
-    FILE *fp=fopen(nome,"wb");                                            //abre o arquivo de nome "nome"
+    FILE *fp = fopen (nome,"wb");                                         //abre o arquivo de nome "nome"
     if(!fp) return NULL;                                                  //cria o nó
     int i;
     fwrite(&no -> nchaves, sizeof(int), 1 , fp);                          //grava nchaves
     fwrite(&no -> folha, sizeof(int), 1, fp);                             //grava se é folha
     
-    for(i = 0; i < no->nchaves; i++) 
+    for(i = 0; i < no -> nchaves; i++) 
         fwrite(&no->chave[i], sizeof(int), 1, fp);                       //grava chaves 
-        
-    for(i = 0; i <= no->nchaves; i++){
-        /**int j;                                                        //      ↓ seria isso?
-        for(j=0;j<90;j++) fwrite(no->filho[i][j],sizeof(char),1,fp);     //grava caracter-a-caracter os nomes dos arquivos **/
-        fputs(no->filho[i], fp);
+    for(i = 0; i <= no -> nchaves; i++){
+        // copia a string pra aux pois queremos manipular para adicionar um "\n" no final para lermos mais tarde
+        char aux [90];
+        strcpy(aux, no->filho[i]);
+        aux[strlen(aux)] = '\n';
+        aux[strlen(aux) + 1] = '\0';
+        printf("%s", aux);
+        fputs(aux, fp);                                                  // grava a string efetivamente
     }
-    
-    fclose(fp);                                  //fecha o arq
-    Libera_no(no);                               //Libera da mp
+    fclose(fp);                                                          //fecha o arq 
     return nome;
 }
 
+TAB *Libera_no(TAB *a){
+    
+    if(!a) return a;
+    
+    if(a->folha == 0){
+        int i;
+        for(i = 0; i <= (a->nchaves); i++)
+            if(a->filho[i]){
+                a-> filho[i] = NULL;
+                free(a -> filho[i]);
+            }
+                
+    }
+    free(a->chave);
+    free(a->filho);
+    free(a);
+    return NULL;
+}
 
 TAB *Leitura_arq(char *arq){
     FILE *fp = fopen (arq, "rb");
     if (!fp) return NULL;
     TAB *aux = Cria_no(2);
-    fread(&aux->nchaves,sizeof(int),1,fp);
+    fread(&aux->nchaves, sizeof(int), 1, fp); // pega nchaves
+    fread(&aux->folha, sizeof(int), 1, fp); // pega se é folha ou n
+    int i;
+    for(i = 0; i < aux->nchaves; i++) 
+        fread(&aux->chave[i], sizeof(int), 1, fp); // pega o número de chaves que for necessário
+    for(i = 0; i <= aux->nchaves; i++){
+        fgets(aux->filho[i], 90, fp); // pega o número de filhos que for necessário (1 a mais de chaves)
+        aux->filho[i][strlen(aux->filho[i]) - 1] = '\0'; // tira o "\n" e substitui por "\0", assim n vai bugar pras próximas funções que usarem o nome do arquivo
+    }
     fclose(fp);
     return aux;
-}
-
-TAB *Libera_no(TAB *a){
-    if(!a) return a;
-    if(a->folha == 0){
-        int i;
-        for(i=0;i<((a->nchaves))+1;i++) if(a->filho[i]) free(a->filho[i]);
-    }
-    free(a->chave);
-    free(a->filho);
-    free(a);
-    printf("poww!");
-    return NULL;
 }
 
 void imprime_data(TAB *a){
@@ -119,14 +133,10 @@ void imprime_data(TAB *a){
 
 void Imprime(char *nome, int andar){
     if(!nome) return;                           //vê se o arq existe
-    FILE *fp=fopen(nome,"rb");                  //abre arquivo
-    if(!fp) return;                             //XIBU
-    TAB *a;                                     //recupera do arquivo
-    fread(a,sizeof(TAB),1,fp);
-    fclose(fp);
+    TAB *a=recupera(nome);                       //recupera do arquivo
     if(a){                                      //imprime recsvmt.
         int i,j;
-        for(i=0; i<a->nchaves; i++){            //cond de parada correta?? Não seria i<=a->nchaves ? [D1]
+        for(i=0; i<a->nchaves; i++){            //cond de parada correta?? Não seria i<=a->nchaves ? [D1] - Nein.
             Imprime(a->filho[i],andar+1);
             for(j=0; j<=andar; j++) printf("   ");
             printf("%d\n", a->chave[i]);
@@ -138,11 +148,11 @@ void Imprime(char *nome, int andar){
 
 void Libera(char *nome){
     if(!nome) exit(-1);
-    FILE *fp=fopen(nome,"rb");                  //abre o arquivo de nome "nome"
-    if(!fp) exit(-1);                           //XIBU
-    TAB *a;                                     //recupera o nó para apagar os filhos recursivamente
-    fread(a,sizeof(TAB),1,fp);
-    fclose(fp);
+    //FILE *fp=fopen(nome,"rb");                  //abre o arquivo de nome "nome"
+    //if(!fp) exit(-1);                           //XIBU
+    TAB *a=recupera(nome);                        //recupera o nó para apagar os filhos recursivamente
+    //fread(a,sizeof(TAB),1,fp);
+    //fclose(fp);
     if(a){
         int i;
         for(i=0; i<=a->nchaves; i++) Libera(a->filho[i]);//mata filhos
@@ -156,36 +166,40 @@ TAB *Inicializa(){
     return NULL;
 }
 
-TAB *Busca_arq(char *x, int ch){
+char *Busca_arq(char *x, int ch){
+    //FILE *fp=fopen(x,"rb");
+    //if(!fp) return NULL;
     TAB *resp = NULL;
-    FILE *fp = fopen(x,"rb");
-    if(!fp) return resp;
-    fread(resp,sizeof(TAB),1,fp);                                //recupera nó atual
-    fclose(fp);                                                  //fecha arq
-    if(!resp) return resp;
+    resp=recupera(x);
+    //int r =fread(resp,sizeof(TAB),1,fp);        //recupera nó atual
+    //fclose(fp);                                 //fecha arq
+    //if(r==-1) return NULL;                      
+    if(!resp) return NULL;                        //se deu ruim na leitura, XIBU
     int i = 0;
-    while(i < resp->nchaves && ch > resp->chave[i]) i++;        //busca para ver se está nas chaves do nó recuperado
-    if(i < resp->nchaves && ch == resp->chave[i]) return resp;  //se achou retorna o TAB que ele está (retornava o nome do arquivo, alterei para obecer a assinatura) - pergola
-    if(resp->folha) return NULL;                                //se não tá ali e não tem filhos, acabou
-    char *tmp=resp->filho[i];
-    printf("%s\n",tmp);
-    return Busca_arq(tmp, ch);                                  //se tem, busca nos filhos
+    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;//busca para ver se está nas chaves do nó recuperado
+    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return x;//se achou retorna o nó
+    if(resp->folha) return NULL;                //se não tá ali e não tem filhos, acabou
+    //char *tmp=resp->filho[i];
+    //printf("%s\n",tmp);
+    return Busca_arq(resp->filho[i], ch);              //se tem, busca nos filhos
 }
 
 TAB *Busca(char* x, int ch){
-    FILE *fp=fopen(x,"rb");
-    if(!fp) return NULL;
+    //FILE *fp=fopen(x,"rb");
+    //if(!fp) return NULL;
     TAB *resp = NULL;
-    int r =fread(resp,sizeof(TAB),1,fp);        //recupera nó atual
-    fclose(fp);                                 //fecha arq
-    if(r==-1) return NULL;                      //se deu ruim na leitura, XIBU
+    resp=recupera(x);
+    //int r =fread(resp,sizeof(TAB),1,fp);        //recupera nó atual
+    //fclose(fp);                                 //fecha arq
+    //if(r==-1) return NULL;                      
+    if(!resp) return NULL;                        //se deu ruim na leitura, XIBU
     int i = 0;
     while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;//busca para ver se está nas chaves do nó recuperado
     if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return resp;//se achou retorna o nó
     if(resp->folha) return NULL;                //se não tá ali e não tem filhos, acabou
-    char *tmp=resp->filho[i];
-    printf("%s\n",tmp);
-    return Busca(tmp, ch);              //se tem, busca nos filhos
+    //char *tmp=resp->filho[i];
+    //printf("%s\n",tmp);
+    return Busca(resp->filho[i], ch);              //se tem, busca nos filhos
 }
 
 TAB *pega_filho(TAB *arv, int qualFilho){
@@ -261,9 +275,64 @@ void remover(char *nArq, int ch, int t){
     }
 }
 
+TAB *Insere(char *n_T, int k, int t){
+  //eu gravo cada atualização no arquivo
+  TAB *T=Busca(n_T,k);
+  if(T) return T;
+  if(!T){
+    T=Cria_no(t)
+    T->chave[0] = k;
+    T->nchaves=1;
+    n_T=Cria(T,n_T);
+    return T;//****
+  }
+  if(T->nchaves == (2*t)-1){
+    TAB *S = Cria_no(t);
+    char n_S[90];///ADD CODIGO QUE incrementa nome para novo arquivo criado 
+    S->nchaves=0;
+    S->folha = 0;
+    S->filho[0] = n_T;
+    S = Divisao(n_S,S,1,n_T,T,t);//Divisao(n_x, x, (i+1), x->filho[i], x_filho, t);//****
+    S = Insere_Nao_Completo(&n_S,k,t);
+    grava(n_s,S);
+    return S;
+  }
+  T = Insere_Nao_Completo(n_T,k,t);
+  grava(n_T,T);
+  return T;
+}
+
+TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t){
+  //eu gravo cada atualização no arquivo!
+  TAB *z=Cria_no(t);
+  char n_z[90];//ADD CODIGO QUE incrementa nome para novo arquivo criado 
+  z->nchaves= t - 1;
+  z->folha = y->folha;
+  int j;
+  for(j=0;j<t-1;j++) z->chave[j] = y->chave[j+t];
+  if(!y->folha){
+    for(j=0;j<t;j++){
+      z->filho[j] = y->filho[j+t];
+      free(y->filho[j+t]);//!!!Achtung!!!! Possivel segmentation fault pode ocorrer aqui!
+      printf("passei por, liberando ponteiros pros filhos\n")
+      y->filho[j+t] = NULL;
+    }
+  }
+  y->nchaves = t-1;
+  for(j=x->nchaves; j>=i; j--) x->filho[j+1]=x->filho[j];
+  x->filho[i] = Cria(z,&n_z);
+  for(j=x->nchaves; j>=i; j--) x->chave[j] = x->chave[j-1];
+  x->chave[i-1] = y->chave[t-1];
+  x->nchaves++;
+  grava(n_x,x);
+  grava(n_y,y);
+  return x;
+}
+
 TAB *Insere_Nao_Completo(char *n_x, int k, int t){
+  //eu gravo cada atualização no arquivo!
   int i = x->nchaves-1;
-  
+  TAB *x=recupera(n_x);
   if(x->folha){
     while((i>=0) && (k<x->chave[i])){
       x->chave[i+1] = x->chave[i];
@@ -271,15 +340,19 @@ TAB *Insere_Nao_Completo(char *n_x, int k, int t){
     }
     x->chave[i+1] = k;
     x->nchaves++;
+    grava(n_x,x);
     return x;
   }
   while((i>=0) && (k<x->chave[i])) i--;
   i++;
-  if(x->filho[i]->nchaves == ((2*t)-1)){
-    x = Divisao(x, (i+1), x->filho[i], t);
+  TAB *x_filho=recupera(x->filho[i]);
+  if(x_filho->nchaves == ((2*t)-1)){
+    x = Divisao(n_x, x, (i+1), x->filho[i], x_filho, t);//****
     if(k>x->chave[i]) i++;
   }
-  x->filho[i] = Insere_Nao_Completo(x->filho[i], k, t);
+  x_filho = Insere_Nao_Completo(x->filho[i], k, t);
+  grava(n_x,x);
+  grava(x->filho[i],x_filho);
   return x;
 }
 
