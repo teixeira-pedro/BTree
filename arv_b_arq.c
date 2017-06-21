@@ -37,7 +37,7 @@ TAB *Cria_no(int t){
 
 char *Cria(TAB *no, char *nome){
     
-    /*
+    /**
     salvaremos os arquivos da seguinte forma:
 
     +------------+
@@ -94,8 +94,8 @@ TAB *Libera_no(TAB *a){
     return NULL;
 }
 
-TAB *Leitura_arq(char *arq){
-    FILE *fp = fopen (arq, "rb");
+TAB *recupera (char *nome){
+    FILE *fp = fopen (nome, "rb");
     if (!fp) return NULL;
     TAB *aux = Cria_no(2);
     fread(&aux->nchaves, sizeof(int), 1, fp); // pega nchaves
