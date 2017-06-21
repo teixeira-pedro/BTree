@@ -24,13 +24,13 @@
 */
 
 TAB *Cria_no(int t){
+    int i;
     TAB *n=(TAB *)malloc(sizeof(TAB));
     n->nchaves = 0;
-    n->chave = (int*)malloc(sizeof(int*)*((t*2)-1));
+    n->chave = (int*)malloc(sizeof(int)*((t*2)-1));
     n->folha = 1;
-    n->filho = malloc((t*2) * (sizeof(char *)));
-    int i;
-    for(i=0;i<(t*2);i++) n->filho[i] = NULL;       //=malloc(4*sizeof(char));
+    n->filho = (char **)malloc((t*2) * (sizeof(char *)));
+    for(i = 0; i < (t*2); i++) n->filho[i] = (char *) malloc(90*sizeof(char));
     return n;
 }
 
@@ -47,27 +47,39 @@ char *Cria(TAB *no,char *nome){
     |1,3,4,...   |← chaves 
     +------------+
     |<nomes dos  |
-    | arquivos..>|
+    | arquivos>  |
     +------------+
     
-    *** alterar função que mostra do arquivo e criar outra para recuperar dados pra TAB
-    */
-    
+    **/
+
     if((!no)||(!nome)) return NULL; 
     FILE *fp=fopen(nome,"wb");                                            //abre o arquivo de nome "nome"
     if(!fp) return NULL;                                                  //cria o nó
     int i;
-    fwrite(&no->nchaves, sizeof(int), 1 , fp);                           //grava nchaves
-    fwrite(&no -> folha, sizeof(int), 1, fp);                            //grava se é folha
-    for(i=0;i<no->nchaves;i++) fwrite(no->nchaves[i],sizeof(int),1,fp); //grava chaves 
-    for(i=0;i<no->nchaves+1;i++){
-        int j;                                                        //      ↓ seria isso?
-        for(j=0;j<90;j++) fwrite(no->filho[i][j],sizeof(char),1,fp);  //grava caracter-a-caracter os nomes dos arquivos 
+    fwrite(&no -> nchaves, sizeof(int), 1 , fp);                          //grava nchaves
+    fwrite(&no -> folha, sizeof(int), 1, fp);                             //grava se é folha
+    
+    for(i = 0; i < no->nchaves; i++) 
+        fwrite(no->&chave[i], sizeof(int), 1, fp);                       //grava chaves 
+        
+    for(i = 0; i <= no->nchaves; i++){
+        /**int j;                                                        //      ↓ seria isso?
+        for(j=0;j<90;j++) fwrite(no->filho[i][j],sizeof(char),1,fp);     //grava caracter-a-caracter os nomes dos arquivos **/
+        fputs(no->filho[i], fp);
     }
-    fclose(fp);                                 //fecha o arq
-    //for(i=0;i<(t*2);i++) free(n->chave[i]);   // Não há necessidade? - pergola;;há sim, foi cuidado em Libera_no() - PP
+    
+    fclose(fp);                                  //fecha o arq
     Libera_no(no);                               //Libera da mp
     return nome;
+}
+
+TAB *Leitura_arq(char *arq){
+    FILE *fp = fopen (arq, "rb");
+    if (!fp) return NULL;
+    TAB *aux = Cria_no(2);
+    fread(&aux->nchaves,sizeof(int),1,fp);
+    fclose(fp);
+    return aux;
 }
 
 TAB *Libera_no(TAB *a){
@@ -159,9 +171,9 @@ TAB *Busca_arq(char *x, int ch){
 }
 
 TAB *Busca(char* x, int ch){
-    TAB *resp = NULL;
     FILE *fp=fopen(x,"rb");
     if(!fp) return NULL;
+    TAB *resp = NULL;
     int r =fread(resp,sizeof(TAB),1,fp);        //recupera nó atual
     fclose(fp);                                 //fecha arq
     if(r==-1) return NULL;                      //se deu ruim na leitura, XIBU
@@ -174,11 +186,28 @@ TAB *Busca(char* x, int ch){
     return Busca(tmp, ch);              //se tem, busca nos filhos
 }
 
+TAB *pega_filho(TAB *arv, int qualFilho){
+  if(!arv){
+    printf("Erro no pega_filho: Árvore vazia.\n")
+    return NULL;
+  }
+  FILE *fpFilho = fopen(arv->filho[qualFilho], "rb");
+  if(!fpFilho) exit(1);
+  TAB *resp = NULL;
+  r = fread(resp, sizeof(TAB), 1, fpFilho);
+  fclose(fpFilho);
+  if(r != 1) {
+    printf("Erro no pega_filho: Erro ao ler filho.\n");
+    return NULL;
+  }
+  return resp;
+}
+
 void remover(char *nArq, int ch, int t){
-    FILE *fp = fopen(nArq, "rb+");
+    FILE *fp = fopen(nArq, "rb");
     if(!fp) exit(1);
-    TAB arv;
-    int r = fread(arv, sizeof(TAB),1 ,fp);
+    TAB *arv = NULL;
+    int r = fread(arv, sizeof(TAB), 1,fp);
     fclose(fp);
     if(r != 1) return NULL;
     int i;
@@ -187,25 +216,63 @@ void remover(char *nArq, int ch, int t){
         if(arv->folha){ 
             //CASO 1
         }
-        if( (!arv->folha) && (arv->filho[i]->nchaves >= t) ){ //CASO 2A
-          printf("\nCASO 2A\n");
-          TAB *y = arv->filho[i];  //Encontrar o predecessor k' de ch na árvore com raiz em y
-          while(!y->folha) y = y->filho[y->nchaves];
-          int temp = y->chave[y->nchaves-1];
-          arv->filho[i] = remover(arv->filho[i], temp, t); 
-          //Eliminar recursivamente K e substitua K por K' em x
-          arv->chave[i] = temp;
+        
+        TAB *y = NULL;
+        y = pega_filho(arv, i); //Encontrar o predecessor k' de ch na árvore com raiz em y
+        if(!y) {
+          printf("Erro no remover: Erro ao ler filho y.\n");
+          return;
         }
-        if( (!arv->folha) && (arv->filho[i+1]->nchaves >= t) ){ 
+        
+        if( (!arv->folha) && (y->nchaves >= t) ){ //CASO 2A
+          printf("\nCASO 2A\n");
+          while(!y->folha) y = pega_filho(y, y->nchaves);
+          int temp = y->chave[y->nchaves-1]; //temp é k'
+          arv->filho[i] = remover(arv->filho[i], temp, t); 
+          //Eliminar recursivamente k' e substitua ch por k' em x
+          arv->chave[i] = temp;
+          Cria(arv, nArq);
+        }
+        
+        TAB *z = NULL;
+        z = pega_filho(arv, i+1);
+        if(!z) {
+          printf("Erro no remover: Erro ao ler filho z.\n");
+          return;
+        }
+        
+        if( (!arv->folha) && (z->nchaves >= t) ){ 
             //CASO 2B
         }
-        if( (!arv->folha) && (arv->filho[i+1]->nchaves == t-1) && (arv->filho[i]->nchaves == t-1) ){ 
+        if( (!arv->folha) && (z->nchaves == t-1) && (y->nchaves == t-1) ){ 
             //CASO 2C
         }
+    }
+}
+
+char *Insere(char *n, int k, int t,int nm_atual){
+    TAB *T=Busca(n,k);
+    if(T) return NULL;
+    if(!T){
+        T=Cria_no(t);
+        T->chave[0]=k;
+        T->nchaves=1;
+        n=Cria(T,n);
+        return n;
+    }
+    if(T->nchaves == (2*t)-1){
+        TAB *S = Cria_no(t);
+        S->nchaves=0;
+        S->folha = 0;
+        strncpy(S->filho[0],T->filho[0],90);//******
+        S = Divisao(S,1,T,t);//******
+        S = Insere_Nao_Completo(S,k,t);//********
+        return S
     }
 }
 
 void main (){
     return NULL;
 }
+
 

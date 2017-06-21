@@ -38,7 +38,7 @@ void remover(char *nArq, int ch, int t);
 void retira(char *arv, int k, int t);
 
 
-TAB *Busca_arq(char* x, int ch);//TESTAR //Retorna nome do arquivo onde o valor está contido ou n
+char *Busca_arq(char* x, int ch);//TESTAR //Retorna nome do arquivo onde o valor está contido ou n
 
 
 void imprime_data(TAB *a);//TESTAR //para testes de campo
