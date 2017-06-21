@@ -30,9 +30,9 @@ void Imprime(char *nome, int andar);//ALTERAR
 TAB *Busca(char* x, int ch);//testar
 TAB *Inicializa();
 
-TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t);//TESTAR
+TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t,int *nome_atual);//TESTAR
 TAB *Insere_Nao_Completo(char *n_x, int k, int t);//testar
-TAB *Insere(char *n_T, int k, int t);//testar
+TAB *Insere(char *n_T, int k, int t,int *nome_atual);//testar
 
 void remover(char *nArq, int ch, int t);
 void retira(char *arv, int k, int t);

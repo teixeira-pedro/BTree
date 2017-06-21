@@ -83,8 +83,8 @@ TAB *Libera_no(TAB *a){
         int i;
         for(i = 0; i <= (a->nchaves); i++)
             if(a->filho[i]){
-                a-> filho[i] = NULL;
                 free(a -> filho[i]);
+                a-> filho[i] = NULL;
             }
                 
     }
@@ -157,9 +157,8 @@ void Libera(char *nome){
         int i;
         for(i=0; i<=a->nchaves; i++) Libera(a->filho[i]);//mata filhos
     }
-    remove(nome);                               //mata o (arquivo) nó atual
-    Libera_no(a);                               //"Free" na MP [D3]
-
+    remove(nome);                                 //mata o (arquivo) nó atual
+    Libera_no(a);                                 //"Free" na MP [D3]
 }
 
 TAB *Inicializa(){
@@ -170,27 +169,36 @@ char *Busca_arq(char *x, int ch){
     //FILE *fp=fopen(x,"rb");
     //if(!fp) return NULL;
     TAB *resp = NULL;
-    resp=recupera(x);
-    //int r =fread(resp,sizeof(TAB),1,fp);        //recupera nó atual
-    //fclose(fp);                                 //fecha arq
+    if(!x) return NULL;
+    resp=recupera(x);                             //recupera nó atual
+    //int r =fread(resp,sizeof(TAB),1,fp);        
+    //fclose(fp);
     //if(r==-1) return NULL;                      
     if(!resp) return NULL;                        //se deu ruim na leitura, XIBU
     int i = 0;
     while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;//busca para ver se está nas chaves do nó recuperado
-    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return x;//se achou retorna o nó
-    if(resp->folha) return NULL;                //se não tá ali e não tem filhos, acabou
+    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return x;//se achou retorna o endereço
+    if(resp->folha) {
+        Libera_no(resp);                                //mata da MP
+        return NULL;                                    //se não tá ali e não tem filhos, acabou
+    }
     //char *tmp=resp->filho[i];
     //printf("%s\n",tmp);
-    return Busca_arq(resp->filho[i], ch);              //se tem, busca nos filhos
+    char filho_i[90];
+    strncpy(&filho_i,resp->filho[i],90);                //****Guardando nome do filho para liberar a MP
+    //return Busca_arq(resp->filho[i], ch);
+    Libera_no(resp);                                    //mata da MP
+    return Busca_arq(&filho_i,ch);                      //se tem, busca nos filhos
 }
 
 TAB *Busca(char* x, int ch){
     //FILE *fp=fopen(x,"rb");
     //if(!fp) return NULL;
+    if(!x) return NULL;
     TAB *resp = NULL;
-    resp=recupera(x);
-    //int r =fread(resp,sizeof(TAB),1,fp);        //recupera nó atual
-    //fclose(fp);                                 //fecha arq
+    resp=recupera(x);                             //recupera nó atual
+    //int r =fread(resp,sizeof(TAB),1,fp);        
+    //fclose(fp);                                 
     //if(r==-1) return NULL;                      
     if(!resp) return NULL;                        //se deu ruim na leitura, XIBU
     int i = 0;
@@ -199,6 +207,10 @@ TAB *Busca(char* x, int ch){
     if(resp->folha) return NULL;                //se não tá ali e não tem filhos, acabou
     //char *tmp=resp->filho[i];
     //printf("%s\n",tmp);
+    char filho_i[90];
+    strncpy(&filho_i,resp->filho[i],90);                //****Guardando nome do filho para liberar a MP
+    //return Busca_arq(resp->filho[i], ch);
+    Libera_no(resp);                                    //mata da MP
     return Busca(resp->filho[i], ch);              //se tem, busca nos filhos
 }
 
@@ -275,7 +287,7 @@ void remover(char *nArq, int ch, int t){
     }
 }
 
-TAB *Insere(char *n_T, int k, int t){
+TAB *Insere(char *n_T, int k, int t,int *nome_atual){
   //eu gravo cada atualização no arquivo
   TAB *T=Busca(n_T,k);
   if(T) return T;
@@ -288,7 +300,9 @@ TAB *Insere(char *n_T, int k, int t){
   }
   if(T->nchaves == (2*t)-1){
     TAB *S = Cria_no(t);
-    char n_S[90];///ADD CODIGO QUE incrementa nome para novo arquivo criado 
+    char n_S[90];
+    *nome_atual++;      //*****************
+    sprintf(&n_S,"%d",nome_atual);  ///ADD CODIGO QUE incrementa nome para novo arquivo criado 
     S->nchaves=0;
     S->folha = 0;
     S->filho[0] = n_T;
@@ -302,10 +316,12 @@ TAB *Insere(char *n_T, int k, int t){
   return T;
 }
 
-TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t){
+TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t,int *nome_atual){
   //eu gravo cada atualização no arquivo!
   TAB *z=Cria_no(t);
   char n_z[90];//ADD CODIGO QUE incrementa nome para novo arquivo criado 
+  *nome_atual++;      //*****************
+  sprintf(&n_z,"%d",nome_atual);  
   z->nchaves= t - 1;
   z->folha = y->folha;
   int j;
@@ -326,6 +342,7 @@ TAB *Divisao(char n_x,TAB *x, int i,char *n_y, TAB* y, int t){
   x->nchaves++;
   grava(n_x,x);
   grava(n_y,y);
+  Libera_no(z);//***********
   return x;
 }
 
@@ -353,6 +370,7 @@ TAB *Insere_Nao_Completo(char *n_x, int k, int t){
   x_filho = Insere_Nao_Completo(x->filho[i], k, t);
   grava(n_x,x);
   grava(x->filho[i],x_filho);
+  Libera_no(x_filho);//********
   return x;
 }
 
