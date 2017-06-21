@@ -15,7 +15,7 @@
 /*
  =====================================LOG=====================================
 
-***[PP-DÚVIDA]*** Após recuperar os nós dos arquivos, deve-se dar free neles ? [@D3]
+***[PP-DÚVIDA]*** Após recuperar os nós dos arquivos, deve-se dar free neles ? R: Não, por que faria isso? Damos free quando não precisamos mais só. -pergola
 ***[PP-WARNING]*** possiveis bugs na questão dos endereços char dos filhos ... irei verificar[@ D2]
 ***[PP-DÚVIDA]*** cond de parada correta?? [@ D1]
 ***[NQ-DÚVIDA]*** Verificar se isso funciona na função da Rosseti [@ D4]
@@ -75,37 +75,35 @@ char *Cria(TAB *no, char *nome){
     return nome;
 }
 
-TAB *Libera_no(TAB *a){
-    
-    if(!a) return a;
+void Libera_no(TAB *a){
+    if(!a) return;
     
     if(a->folha == 0){
         int i;
         for(i = 0; i <= (a->nchaves); i++)
             if(a->filho[i]){
-                free(a -> filho[i]);
                 a-> filho[i] = NULL;
+                free(a -> filho[i]);
             }
-                
     }
     free(a->chave);
     free(a->filho);
     free(a);
-    return NULL;
+    return ;
 }
 
 TAB *recupera (char *nome){
     FILE *fp = fopen (nome, "rb");
     if (!fp) return NULL;
     TAB *aux = Cria_no(2);
-    fread(&aux->nchaves, sizeof(int), 1, fp); // pega nchaves
-    fread(&aux->folha, sizeof(int), 1, fp); // pega se é folha ou n
+    fread(&aux->nchaves, sizeof(int), 1, fp);               // pega nchaves
+    fread(&aux->folha, sizeof(int), 1, fp);                 // pega se é folha ou n
     int i;
     for(i = 0; i < aux->nchaves; i++) 
-        fread(&aux->chave[i], sizeof(int), 1, fp); // pega o número de chaves que for necessário
+        fread(&aux->chave[i], sizeof(int), 1, fp);          // pega o número de chaves que for necessário
     for(i = 0; i <= aux->nchaves; i++){
-        fgets(aux->filho[i], 90, fp); // pega o número de filhos que for necessário (1 a mais de chaves)
-        aux->filho[i][strlen(aux->filho[i]) - 1] = '\0'; // tira o "\n" e substitui por "\0", assim n vai bugar pras próximas funções que usarem o nome do arquivo
+        fgets(aux->filho[i], 90, fp);                       // pega o número de filhos que for necessário (1 a mais de chaves)
+        aux->filho[i][strlen(aux->filho[i]) - 1] = '\0';    // tira o "\n" e substitui por "\0", assim n vai bugar pras próximas funções que usarem o nome do arquivo
     }
     fclose(fp);
     return aux;
@@ -132,11 +130,11 @@ void imprime_data(TAB *a){
 }
 
 void Imprime(char *nome, int andar){
-    if(!nome) return;                           //vê se o arq existe
-    TAB *a=recupera(nome);                       //recupera do arquivo
-    if(a){                                      //imprime recsvmt.
+    if(!nome) return;                           // vê se o arq existe
+    TAB *a=recupera(nome);                      // recupera do arquivo
+    if(a){                                      // imprime recsvmt.
         int i,j;
-        for(i=0; i<a->nchaves; i++){            //cond de parada correta?? Não seria i<=a->nchaves ? [D1] - Nein.
+        for(i=0; i<a->nchaves; i++){            // cond de parada correta?? Não seria i<=a->nchaves ? [D1] - Nein.
             Imprime(a->filho[i],andar+1);
             for(j=0; j<=andar; j++) printf("   ");
             printf("%d\n", a->chave[i]);
@@ -148,70 +146,48 @@ void Imprime(char *nome, int andar){
 
 void Libera(char *nome){
     if(!nome) exit(-1);
-    //FILE *fp=fopen(nome,"rb");                  //abre o arquivo de nome "nome"
-    //if(!fp) exit(-1);                           //XIBU
     TAB *a=recupera(nome);                        //recupera o nó para apagar os filhos recursivamente
-    //fread(a,sizeof(TAB),1,fp);
-    //fclose(fp);
     if(a){
         int i;
         for(i=0; i<=a->nchaves; i++) Libera(a->filho[i]);//mata filhos
     }
     remove(nome);                                 //mata o (arquivo) nó atual
-    Libera_no(a);                                 //"Free" na MP [D3]
+    Libera_no(a);                                 //"Free" na MP
 }
 
-TAB *Inicializa(){
-    return NULL;
-}
-
-char *Busca_arq(char *x, int ch){
-    //FILE *fp=fopen(x,"rb");
-    //if(!fp) return NULL;
+char *Busca_arq(char x[90], int ch){
     TAB *resp = NULL;
     if(!x) return NULL;
-    resp=recupera(x);                             //recupera nó atual
-    //int r =fread(resp,sizeof(TAB),1,fp);        
-    //fclose(fp);
-    //if(r==-1) return NULL;                      
-    if(!resp) return NULL;                        //se deu ruim na leitura, XIBU
+    resp=recupera(x);                                                        //recupera nó atual
+    if(!resp) return NULL;                                                   //se deu ruim na leitura, XIBU
     int i = 0;
-    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;//busca para ver se está nas chaves do nó recuperado
-    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return x;//se achou retorna o endereço
+    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;               //busca para ver se está nas chaves do nó recuperado
+    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return x;            //se achou retorna o endereço
     if(resp->folha) {
-        Libera_no(resp);                                //mata da MP
-        return NULL;                                    //se não tá ali e não tem filhos, acabou
+        Libera_no(resp);                                                     //mata da MP
+        return NULL;                                                         //se não tá ali e não tem filhos, acabou
     }
     //char *tmp=resp->filho[i];
-    //printf("%s\n",tmp);
     char filho_i[90];
-    strncpy(&filho_i,resp->filho[i],90);                //****Guardando nome do filho para liberar a MP
+    strcpy(filho_i, resp->filho[i]);                                         //Guardando nome do filho para liberar a MP
     //return Busca_arq(resp->filho[i], ch);
-    Libera_no(resp);                                    //mata da MP
-    return Busca_arq(&filho_i,ch);                      //se tem, busca nos filhos
+    Libera_no(resp);                                                         //mata da MP
+    return Busca_arq(filho_i, ch);                                           //se tem, busca nos filhos
 }
 
 TAB *Busca(char* x, int ch){
-    //FILE *fp=fopen(x,"rb");
-    //if(!fp) return NULL;
     if(!x) return NULL;
     TAB *resp = NULL;
-    resp=recupera(x);                             //recupera nó atual
-    //int r =fread(resp,sizeof(TAB),1,fp);        
-    //fclose(fp);                                 
-    //if(r==-1) return NULL;                      
-    if(!resp) return NULL;                        //se deu ruim na leitura, XIBU
+    resp=recupera(x);                                                       // recupera nó atual
+    if(!resp) return NULL;                                                  // se deu ruim na leitura, XIBU
     int i = 0;
-    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;//busca para ver se está nas chaves do nó recuperado
-    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return resp;//se achou retorna o nó
-    if(resp->folha) return NULL;                //se não tá ali e não tem filhos, acabou
-    //char *tmp=resp->filho[i];
-    //printf("%s\n",tmp);
+    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;              // busca para ver se está nas chaves do nó recuperado
+    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return resp;        // se achou retorna o nó
+    if(resp->folha == 1) return NULL;                                       // se não tá ali e não tem filhos, acabou
     char filho_i[90];
-    strncpy(&filho_i,resp->filho[i],90);                //****Guardando nome do filho para liberar a MP
-    //return Busca_arq(resp->filho[i], ch);
-    Libera_no(resp);                                    //mata da MP
-    return Busca(resp->filho[i], ch);              //se tem, busca nos filhos
+    strcpy(filho_i, resp->filho[i]);                                         // Guardando nome do filho para liberar a MP
+    Libera_no(resp);                                                        // mata da MP
+    return Busca(resp->filho[i], ch);                                       // se tem, busca nos filhos
 }
 
 TAB *pega_filho(TAB *arv, int qualFilho){
@@ -219,12 +195,8 @@ TAB *pega_filho(TAB *arv, int qualFilho){
     printf("Erro no pega_filho: Árvore vazia.\n");
     return NULL;
   }
-  FILE *fpFilho = fopen(arv->filho[qualFilho], "rb");
-  if(!fpFilho) exit(1);
-  TAB *resp = NULL;
-  r = fread(resp, sizeof(TAB), 1, fpFilho);
-  fclose(fpFilho);
-  if(r != 1) {
+  TAB *resp = recupera(arv->filho[qualFilho]);
+  if(!resp) {
     printf("Erro no pega_filho: Erro ao ler filho.\n");
     return NULL;
   }
@@ -237,7 +209,7 @@ void remover(char *nArq, int ch, int t){
     TAB *arv = NULL;
     int r = fread(arv, sizeof(TAB), 1,fp);
     fclose(fp);
-    if(r != 1) return NULL;
+    if(r != 1) return;
     int i;
     for(i = 0; ( (i < arv->nchaves) && (arv->chave[i]) ) < ch; i++);
     if( (i < arv->nchaves) && (ch == arv->chave[i]) ){ //CASOS 1, 2A, 2B e 2C
@@ -261,7 +233,8 @@ void remover(char *nArq, int ch, int t){
             printf("Erro no remover: Erro ao ler filho (Caso 2a).\n");
             return;
           }
-          filho = remover(filho, temp, t); //Eliminar recursivamente k' 
+          //filho = remover(filho, temp, t); //Eliminar recursivamente k' (comentei a linha pois estava atribuindo à filho uma função void)
+          remover(filho, temp, t); //Eliminar recursivamente k' (filho está errado, era pra ser um char* e filho é TAB*)
           arv->chave[i] = temp; //Substitua ch por k' em x
           Cria(arv, nArq);
         }
@@ -292,7 +265,7 @@ TAB *Insere(char *n_T, int k, int t,int *nome_atual){
   TAB *T=Busca(n_T,k);
   if(T) return T;
   if(!T){
-    T=Cria_no(t)
+    T=Cria_no(t);
     T->chave[0] = k;
     T->nchaves=1;
     n_T=Cria(T,n_T);
@@ -374,8 +347,13 @@ TAB *Insere_Nao_Completo(char *n_x, int k, int t){
   return x;
 }
 
-void main (){
-    return NULL;
+int main (){
+    printf("Arvore B\n");
+    printf("Insira chave inicial: \n");
+    int chave = 0;
+    scanf("%d", &chave);
+    printf("Chave inicial = %d", chave);
+    return 0;
 }
 
 
