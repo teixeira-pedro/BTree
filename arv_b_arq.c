@@ -38,19 +38,42 @@ TAB *Cria_no(int t){
     return n;
 }
 
-char *Cria(int t,char *nome){
-    if(!nome) return NULL;
+char *Cria(TAB *no,char *nome){
+    
+    /*
+    salvaremos os arquivos da seguinte forma:
+
+    +------------+
+    |  nchaves   |← nfilhos implicito
+    +------------+
+    |  folha     |← é follha
+    +------------+
+    |1,3,4,...   |← chaves 
+    +------------+
+    |<nomes dos  |
+    | arquivos..>|
+    +------------+
+    
+    *** alterar função que mostra do arquivo e criar outra para recuperar dados pra TAB
+    */
+    if((!no)||(!nome)) return NULL;
     FILE *fp=fopen(nome,"rb+");                  //abre o arquivo de nome "nome"
     if(!fp) return NULL;                         //cria o nó
-    TAB *n = Cria_no(t);
+    //TAB *n = Cria_no(t);
     int i;
-    for(i=0;i<(t*2);i++) n->filho[i] = malloc(4*sizeof(char));
-    fwrite(n,sizeof(TAB),1,fp);                 //grava o nó
+    //for(i=0;i<(t*2);i++) n->filho[i] = malloc(4*sizeof(char));
+    //fwrite(n,sizeof(TAB),1,fp);                 //grava o nó
+    fwrite(&no->nchaves,sizeof(int),1,fp);              //grava nchaves
+    fwrite(&no->folha,sizeof(int),1,fp);                //grava se é folha
+    for(i=0;i<no->nchaves;i++) fwrite(no->nchaves[i],sizeof(int),1,fp); //grava chaves 
+    for(i=0;i<no->nchaves+1;i++){
+        int j;                                                        //      ↓seria isso?
+        for(j=0;j<90;j++) fwrite(no->filho[i][j],sizeof(char),1,fp);//grava caracter-a-caracter os nomes dos arquivos 
+    }
     fclose(fp);                                 //fecha o arq
-    //for(i=0;i<(t*2);i++) free(n->chave[i]);   // Não há necessidade? - pergola
-    Libera_no(n);                               //Libera da mp
+    //for(i=0;i<(t*2);i++) free(n->chave[i]);   // Não há necessidade? - pergola;;há sim, foi cuidado em Libera_no() - PP
+    Libera_no(no);                               //Libera da mp
     return nome;
-
 }
 
 TAB *Libera_no(TAB *a){
@@ -95,7 +118,7 @@ void Imprime(char *nome, int andar){
     fclose(fp);
     if(a){                                      //imprime recsvmt.
         int i,j;
-        for(i=0; i<a->nchaves; i++){         //cond de parada correta?? Não seria i<=a->nchaves ? [D1]
+        for(i=0; i<a->nchaves; i++){            //cond de parada correta?? Não seria i<=a->nchaves ? [D1]
             Imprime(a->filho[i],andar+1);
             for(j=0; j<=andar; j++) printf("   ");
             printf("%d\n", a->chave[i]);
@@ -157,7 +180,34 @@ TAB *Busca(char* x, int ch){
     return Busca(tmp, ch);              //se tem, busca nos filhos
 }
 
+TAB *remover(char *nArq, int ch, int t){
+    FILE *fp = fopen(nArq, "rb+");
+    if(!fp) exit(1);
+    TAB arv;
+    int r = fread(arv, sizeof(TAB),1 ,fp);
+    fclose(fp);
+    if(r != 1) return NULL;
+    int i;
+    for(i = 0; i < arv->nchaves && arv->chave[i] < ch; i++);
+    if(i < arv->nchaves && ch == arv->chave[i]){ //CASOS 1, 2A, 2B e 2C
+        if(arv->folha){ 
+            //CASO 1
+        }
+        if(!arv->folha && arv->filho[i]->nchaves >= t){ //CASO 2A
+            printf("\nCASO 2A\n");
+            
+            
+        }
+        if(!arv->folha && arv->filho[i+1]->nchaves >= t){ 
+            //CASO 2B
+        }
+        if(!arv->folha && arv->filho[i+1]->nchaves == t-1 && arv->filho[i]->nchaves == t-1){ 
+            //CASO 2C
+        }
+    }
+}
+
 void main (){
-    return 0;
+    return NULL;
 }
 
