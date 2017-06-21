@@ -18,6 +18,7 @@
 ***[PP-DÚVIDA]*** Após recuperar os nós dos arquivos, deve-se dar free neles ? [@D3]
 ***[PP-WARNING]*** possiveis bugs na questão dos endereços char dos filhos ... irei verificar[@ D2]
 ***[PP-DÚVIDA]*** cond de parada correta?? [@ D1]
+***[NQ-DÚVIDA]*** Verificar se isso funciona na função da Rosseti [@ D4]
 
 
  =====================================LOG=====================================
@@ -60,7 +61,7 @@ char *Cria(TAB *no,char *nome){
     fwrite(&no -> folha, sizeof(int), 1, fp);                             //grava se é folha
     
     for(i = 0; i < no->nchaves; i++) 
-        fwrite(no->&chave[i], sizeof(int), 1, fp);                       //grava chaves 
+        fwrite(&no->chave[i], sizeof(int), 1, fp);                       //grava chaves 
         
     for(i = 0; i <= no->nchaves; i++){
         /**int j;                                                        //      ↓ seria isso?
@@ -72,6 +73,7 @@ char *Cria(TAB *no,char *nome){
     Libera_no(no);                               //Libera da mp
     return nome;
 }
+
 
 TAB *Leitura_arq(char *arq){
     FILE *fp = fopen (arq, "rb");
@@ -188,7 +190,7 @@ TAB *Busca(char* x, int ch){
 
 TAB *pega_filho(TAB *arv, int qualFilho){
   if(!arv){
-    printf("Erro no pega_filho: Árvore vazia.\n")
+    printf("Erro no pega_filho: Árvore vazia.\n");
     return NULL;
   }
   FILE *fpFilho = fopen(arv->filho[qualFilho], "rb");
@@ -228,21 +230,30 @@ void remover(char *nArq, int ch, int t){
           printf("\nCASO 2A\n");
           while(!y->folha) y = pega_filho(y, y->nchaves);
           int temp = y->chave[y->nchaves-1]; //temp é k'
-          arv->filho[i] = remover(arv->filho[i], temp, t); 
-          //Eliminar recursivamente k' e substitua ch por k' em x
-          arv->chave[i] = temp;
+          TAB *filho = pega_filho(arv, i);
+          if(!filho) {
+            printf("Erro no remover: Erro ao ler filho (Caso 2a).\n");
+            return;
+          }
+          filho = remover(filho, temp, t); //Eliminar recursivamente k' 
+          arv->chave[i] = temp; //Substitua ch por k' em x
           Cria(arv, nArq);
         }
         
         TAB *z = NULL;
-        z = pega_filho(arv, i+1);
+        z = pega_filho(arv, i+1); //Encontrar o sucessor k' de k na árvore com raiz em z
         if(!z) {
           printf("Erro no remover: Erro ao ler filho z.\n");
           return;
         }
         
-        if( (!arv->folha) && (z->nchaves >= t) ){ 
-            //CASO 2B
+        if( (!arv->folha) && (z->nchaves >= t) ){  //CASO 2B
+          printf("\nCASO 2B\n");
+          while(!z->folha) z = pega_filho(z, 0);
+          int temp = z->chave[0]; //temp é k'
+          z = remover(pega_filho(arv, i+1), temp, t); //Eliminar recursivamente k' [D4]
+          arv->chave[i] = temp; // Substitua ch por k' em x
+          Cria(arv, nArq);
         }
         if( (!arv->folha) && (z->nchaves == t-1) && (y->nchaves == t-1) ){ 
             //CASO 2C
@@ -250,25 +261,26 @@ void remover(char *nArq, int ch, int t){
     }
 }
 
-char *Insere(char *n, int k, int t,int nm_atual){
-    TAB *T=Busca(n,k);
-    if(T) return NULL;
-    if(!T){
-        T=Cria_no(t);
-        T->chave[0]=k;
-        T->nchaves=1;
-        n=Cria(T,n);
-        return n;
+TAB *Insere_Nao_Completo(char *n_x, int k, int t){
+  int i = x->nchaves-1;
+  
+  if(x->folha){
+    while((i>=0) && (k<x->chave[i])){
+      x->chave[i+1] = x->chave[i];
+      i--;
     }
-    if(T->nchaves == (2*t)-1){
-        TAB *S = Cria_no(t);
-        S->nchaves=0;
-        S->folha = 0;
-        strncpy(S->filho[0],T->filho[0],90);//******
-        S = Divisao(S,1,T,t);//******
-        S = Insere_Nao_Completo(S,k,t);//********
-        return S
-    }
+    x->chave[i+1] = k;
+    x->nchaves++;
+    return x;
+  }
+  while((i>=0) && (k<x->chave[i])) i--;
+  i++;
+  if(x->filho[i]->nchaves == ((2*t)-1)){
+    x = Divisao(x, (i+1), x->filho[i], t);
+    if(k>x->chave[i]) i++;
+  }
+  x->filho[i] = Insere_Nao_Completo(x->filho[i], k, t);
+  return x;
 }
 
 void main (){
