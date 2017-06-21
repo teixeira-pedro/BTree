@@ -6,22 +6,18 @@
 //
 //
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "arv_b_arq.h"
 
-
-
 /*
  =====================================LOG=====================================
 
 ***[PP-DÚVIDA]*** Após recuperar os nós dos arquivos, deve-se dar free neles ? [@D3]
 ***[PP-WARNING]*** possiveis bugs na questão dos endereços char dos filhos ... irei verificar[@ D2]
- ***[PP-DÚVIDA]*** cond de parada correta?? [@ D1]
+***[PP-DÚVIDA]*** cond de parada correta?? [@ D1]
 
 
  =====================================LOG=====================================
@@ -56,19 +52,17 @@ char *Cria(TAB *no,char *nome){
     
     *** alterar função que mostra do arquivo e criar outra para recuperar dados pra TAB
     */
-    if((!no)||(!nome)) return NULL;
-    FILE *fp=fopen(nome,"rb+");                  //abre o arquivo de nome "nome"
-    if(!fp) return NULL;                         //cria o nó
-    //TAB *n = Cria_no(t);
+    
+    if((!no)||(!nome)) return NULL; 
+    FILE *fp=fopen(nome,"wb");                                            //abre o arquivo de nome "nome"
+    if(!fp) return NULL;                                                  //cria o nó
     int i;
-    //for(i=0;i<(t*2);i++) n->filho[i] = malloc(4*sizeof(char));
-    //fwrite(n,sizeof(TAB),1,fp);                 //grava o nó
-    fwrite(&no->nchaves,sizeof(int),1,fp);              //grava nchaves
-    fwrite(&no->folha,sizeof(int),1,fp);                //grava se é folha
+    fwrite(&no->nchaves, sizeof(int), 1 , fp);                           //grava nchaves
+    fwrite(&no -> folha, sizeof(int), 1, fp);                            //grava se é folha
     for(i=0;i<no->nchaves;i++) fwrite(no->nchaves[i],sizeof(int),1,fp); //grava chaves 
     for(i=0;i<no->nchaves+1;i++){
-        int j;                                                        //      ↓seria isso?
-        for(j=0;j<90;j++) fwrite(no->filho[i][j],sizeof(char),1,fp);//grava caracter-a-caracter os nomes dos arquivos 
+        int j;                                                        //      ↓ seria isso?
+        for(j=0;j<90;j++) fwrite(no->filho[i][j],sizeof(char),1,fp);  //grava caracter-a-caracter os nomes dos arquivos 
     }
     fclose(fp);                                 //fecha o arq
     //for(i=0;i<(t*2);i++) free(n->chave[i]);   // Não há necessidade? - pergola;;há sim, foi cuidado em Libera_no() - PP
@@ -172,15 +166,15 @@ TAB *Busca(char* x, int ch){
     fclose(fp);                                 //fecha arq
     if(r==-1) return NULL;                      //se deu ruim na leitura, XIBU
     int i = 0;
-    while(i < resp->nchaves && ch > resp->chave[i]) i++;//busca para ver se está nas chaves do nó recuperado
-    if(i < resp->nchaves && ch == resp->chave[i]) return resp;//se achou retorna o nó
+    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;//busca para ver se está nas chaves do nó recuperado
+    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return resp;//se achou retorna o nó
     if(resp->folha) return NULL;                //se não tá ali e não tem filhos, acabou
     char *tmp=resp->filho[i];
     printf("%s\n",tmp);
     return Busca(tmp, ch);              //se tem, busca nos filhos
 }
 
-TAB *remover(char *nArq, int ch, int t){
+void remover(char *nArq, int ch, int t){
     FILE *fp = fopen(nArq, "rb+");
     if(!fp) exit(1);
     TAB arv;
@@ -188,20 +182,24 @@ TAB *remover(char *nArq, int ch, int t){
     fclose(fp);
     if(r != 1) return NULL;
     int i;
-    for(i = 0; i < arv->nchaves && arv->chave[i] < ch; i++);
-    if(i < arv->nchaves && ch == arv->chave[i]){ //CASOS 1, 2A, 2B e 2C
+    for(i = 0; ( (i < arv->nchaves) && (arv->chave[i]) ) < ch; i++);
+    if( (i < arv->nchaves) && (ch == arv->chave[i]) ){ //CASOS 1, 2A, 2B e 2C
         if(arv->folha){ 
             //CASO 1
         }
-        if(!arv->folha && arv->filho[i]->nchaves >= t){ //CASO 2A
-            printf("\nCASO 2A\n");
-            
-            
+        if( (!arv->folha) && (arv->filho[i]->nchaves >= t) ){ //CASO 2A
+          printf("\nCASO 2A\n");
+          TAB *y = arv->filho[i];  //Encontrar o predecessor k' de ch na árvore com raiz em y
+          while(!y->folha) y = y->filho[y->nchaves];
+          int temp = y->chave[y->nchaves-1];
+          arv->filho[i] = remover(arv->filho[i], temp, t); 
+          //Eliminar recursivamente K e substitua K por K' em x
+          arv->chave[i] = temp;
         }
-        if(!arv->folha && arv->filho[i+1]->nchaves >= t){ 
+        if( (!arv->folha) && (arv->filho[i+1]->nchaves >= t) ){ 
             //CASO 2B
         }
-        if(!arv->folha && arv->filho[i+1]->nchaves == t-1 && arv->filho[i]->nchaves == t-1){ 
+        if( (!arv->folha) && (arv->filho[i+1]->nchaves == t-1) && (arv->filho[i]->nchaves == t-1) ){ 
             //CASO 2C
         }
     }

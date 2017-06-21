@@ -34,7 +34,7 @@ TAB *Divisao(char *n_x, int i, char* n_y, int t,int m_atual);
 void Insere_Nao_Completo(char *x, int k, int t);
 char *Insere(char *n, int k, int t,int nm_atual);
 
-TAB *remover(char *nArq, int ch, int t);
+void remover(char *nArq, int ch, int t);
 void retira(char *arv, int k, int t);
 
 
