@@ -1,6 +1,6 @@
 //
 //  arv_b_arq.h
-//  
+//
 //
 //  Created by Pedro Teixeira on 16/06/17.
 //
@@ -11,9 +11,6 @@
 #include <string.h>
 
 
-
-
-
 typedef struct arvore_b{
     int nchaves, folha, *chave;
     char **filho;
@@ -22,7 +19,7 @@ typedef struct arvore_b{
 /*
     estrutura básica de árvore b, qtd de chaves, se é folha ou não, e ponteiro para o vetor de chaves
     ponteiro para o endereço do arquivo contendo os filhos
- 
+
 */
 
 TAB *Cria_no(int t);//OK
