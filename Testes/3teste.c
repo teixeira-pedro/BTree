@@ -156,21 +156,6 @@ char *Busca_arq(char x[90], int ch){
     return Busca_arq(filho_i, ch);                                           //se tem, busca nos filhos
 }
 
-TAB *Busca(char* x, int ch){
-    if(!x) return NULL;
-    TAB *resp = NULL;
-    resp=recupera(x);                                                       // recupera nó atual
-    if(!resp) return NULL;                                                  // se deu ruim na leitura, XIBU
-    int i = 0;
-    while( (i < resp->nchaves) && (ch > resp->chave[i]) ) i++;              // busca para ver se está nas chaves do nó recuperado
-    if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return resp;        // se achou retorna o nó
-    if(resp->folha == 1) return NULL;                                       // se não tá ali e não tem filhos, acabou
-    char filho_i[90];
-    strcpy(filho_i, resp->filho[i]);                                         // Guardando nome do filho para liberar a MP
-    Libera_no(resp);                                                        // mata da MP
-    return Busca(resp->filho[i], ch);                                       // se tem, busca nos filhos
-}
-
 TAB *pega_filho(TAB *arv, int qualFilho){
     if(!arv){
         printf("Erro no pega_filho: Árvore vazia.\n");
@@ -244,6 +229,39 @@ void Imprime_ms(char *nome, int andar){
     
 }
 
+TAB *Busca(char* x, int ch){
+    if (!x) return NULL;    // Nome inexistente
+    TAB *aux = NULL;
+    aux = recupera(x);
+    if (!aux) return NULL;  // XIBU
+    
+    // procura a chave nessa TAB
+    int i;
+    for (i = 0; i < aux->nchaves; i++)
+        if (ch == aux -> chave[i]) return aux;    // achou a exata chave então retorna TAB sem preocupação
+    
+    // Nó atual é folha e n encontrou a chave
+    if (aux -> folha == 1) return NULL;
+    
+    // não achou a chave nessa TAB então vamos ver o qual é o único filho que a chave buscada pode estar
+    for (i = 0; i < aux -> nchaves; i++){
+        if (ch < aux -> chave[i]){
+            // se chave buscada for menos que chave analisada, buscamos o único filho q ela possivelmente esteja
+            // não é folha então pega o filho da esquerda (que tem o mesmo indice atual i) e usa a função recursiva nele
+            // lembrando de liberar o nó auxiliar para não ocuparmos memória desnecessariamente.
+            Libera_no(aux);
+            char *filho_esq = pega_filho_arq(x, i);
+            return Busca(filho_esq, ch);
+        }
+    }
+    
+    // não entrou em nenhum caso anterior então a chave buscada é maior que todas as chaves anteriores
+    Libera_no(aux);
+    char *filho_esq = pega_filho_arq(x, i);
+    return Busca(filho_esq, ch);
+}
+
+
 int main (){
     
     /** Testa criar, salvar e carrega um arquivo raiz **/
@@ -297,6 +315,21 @@ int main (){
     
     /** Testa imprimir **/
     Imprime_ms("minharaiz.dat", 0);
+    
+    
+    /** Testa a busca **/
+    int x;
+    while (x > 0){
+        printf("Insira a chave que quer buscar: (negativo apra sair do loop) \n");
+        scanf("%d", &x);
+        TAB *buscado = Busca("minharaiz.dat", x);
+        if (buscado) printf("A busca encontrou seu número!\n");
+        else printf("Número não encontrado =/\n");
+        if (x == 1) Imprime_ms("minharaiz.dat", 0);
+    }
+    
+    
+    
     
     return 0;
 }
