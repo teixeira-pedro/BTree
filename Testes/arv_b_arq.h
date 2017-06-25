@@ -47,4 +47,4 @@ char *Divisao_TAB_MS(char *n_X,int i,char *n_Y,int *nome_atual);
 char *Insere_TAB_MS(char *n_A,int k,int *nome_atual);
 char *Insere_Nao_Completo_TAB_MS(char *n_X,int k,int *nome_atual);
 
-int remover(char *nArq, int ch);
+int remover(char *nArq, int ch); //testado casos 1 e 2

@@ -550,23 +550,31 @@ int remover(char *nArq, int ch){
         char filho_a_remover[90];
         strcpy(filho_a_remover, arv->filho[i+1]);
         
-        for(j=i+1; j <= arv->nchaves; j++){  //sobrescrever o nome do filho que vai ser removido pelos nomes seguintes
+        printf("\nÁrvore nchaves: %d\n", arv->nchaves);
+        
+        for(j=i+1; j < arv->nchaves; j++){  //sobrescrever o nome do filho que vai ser removido pelos nomes seguintes
           printf("Sobrescrevendo %s por %s\n", arv->filho[j], arv->filho[j+1]);
           strcpy(arv->filho[j], arv->filho[j+1]);
           printf("j = %d\n", j);
         }
-        arv->filho[j] = NULL;               //"remover" o último filho que seria de ninguém
+        arv->filho[j+1] = NULL;               //"remover" o último filho que seria de ninguém
         printf("Removeu o filho z.\n");
         arv->nchaves--;
         
         Cria(arv, nArq);
         Libera_no(arv);
+        printf("Liberou %s.\n", nArq);
         char *filhoY = pega_filho_arq(nArq, i);
         Cria(y, filhoY);
         Libera_no(y);
+        printf("Liberou %s.\n", filhoY);
         Libera_no(z);
         printf("Nome do filho a ser removido: %s.\n", filho_a_remover);
-        Libera(filho_a_remover);
+        TAB* filho = recupera(filho_a_remover);
+        Libera_no(filho);
+        remove(filho_a_remover);
+        //Libera(filho_a_remover);
+        
         
         int r = remover(filhoY, ch); // remover recursivamente a ch de y (o z deixa de existir)
         if(r == 1) remove_filho(nArq, filhoY);
@@ -618,7 +626,6 @@ int remover(char *nArq, int ch){
 */
         //verificar para filho
     }
-}
 
 int main (){
     

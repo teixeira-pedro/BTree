@@ -473,21 +473,12 @@ int main (){
                 //remover(raiz, resp);
             }
         }else if(resp == 3){
-            printf("\n\t\t Mostrando arquivo raiz '%s'!!\n\n", raiz);
+            printf("\t\t Mostrando arquivo raiz '%s'!!\n\n", raiz);
             Imprime_ms(raiz, 0);    
         }else {
             printf("Valor inválido, tente novamente\n");
         }
     }while(resp!=-99);
-        
-    /** limpa arquivos depois de finalizar **/
-    i = 1;
-    while (i <= cont){
-        char aux [90];
-        sprintf(aux, "%d.dat", i);
-        remove(aux);    
-        i++;
-    }
     
     return 0;
 }
