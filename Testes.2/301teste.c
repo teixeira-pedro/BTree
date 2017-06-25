@@ -3,10 +3,18 @@
 #include <string.h>
 #include <math.h>
 #include "arv_b_arq.h"
-#define T 3
+
+int pega_T(){
+  FILE *fp = fopen("T.dat", "rb");
+  int t = 0;
+  fread(&t, sizeof(int), 1, fp);
+  fclose(fp);
+  return t;
+}
+
 
 TAB *Cria_no(){
-    
+    int T = pega_T();
     int i;
     TAB *n = (TAB *)malloc(sizeof(TAB));
     n->nchaves = 0;
@@ -76,6 +84,7 @@ void Libera_no(TAB *a){
 }
 
 TAB *recupera (char *nome){
+    int T = pega_T();
     FILE *fp = fopen (nome, "rb");
     if (!fp) return NULL;
     TAB *aux = Cria_no(2);
@@ -112,7 +121,7 @@ void Imprime(char *nome, int andar){
 void Libera(char *nome){
     if(!nome) exit(-1);
     TAB *a=recupera(nome);                        //recupera o nó para apagar os filhos recursivamente
-    if(a){
+    if(!a->folha){
         int i;
         for(i=0; i<=a->nchaves; i++) Libera(a->filho[i]);//mata filhos
     }
@@ -263,6 +272,7 @@ char *guarda(void *end_v, TAB *elem, int tipo){
 }
 
 char *Divisao_TAB_MS(char *n_X, int i, char *n_Y, int *nome_atual){
+    int T = pega_T();
     TAB *Z = Cria_no(T);    // Novo nó Z (direita do nó antigo)
     TAB *Y = recupera(n_Y); // T na chamada, nó antigo antes da divisão (direita)
     TAB *X = recupera(n_X); // S na chamada, "nó de cima"
@@ -306,6 +316,7 @@ char *Divisao_TAB_MS(char *n_X, int i, char *n_Y, int *nome_atual){
 }
 
 char *Insere_Nao_Completo_TAB_MS(char *n_X, int k, int *nome_atual){
+    int T = pega_T();
     TAB *X = recupera(n_X);
     int i = X->nchaves - 1;
     if(X->folha == 1){
@@ -344,6 +355,7 @@ char *Insere_Nao_Completo_TAB_MS(char *n_X, int k, int *nome_atual){
 }
 
 char *Insere_TAB_MS(char *n_A, int k, int *nome_atual){
+    int T = pega_T();
     if((!n_A) || (!nome_atual)) return NULL;
     TAB *A = Busca(n_A, k);
     //printf("buscou");
@@ -395,37 +407,80 @@ char *Insere_TAB_MS(char *n_A, int k, int *nome_atual){
     Libera_no(A);
     return n_A;
 }
-
 int main (){
     
     int cont = 0;
     int resp = -1;
     int limpou = 0;
     int i = 1;
+    char *raiz = (char *) malloc(sizeof(char) * 90);
+    char raiz_aux[90];
     
-    /** limpa arquivos antes de começar **/
-    while (limpou == 0){
-        char aux [90];
-        sprintf(aux, "%d.dat", i);
-        limpou = remove(aux);    
-        i++;
+    // define t
+    printf("Escolha seu t: (-99 se preferir carregar arquivos já existentes)\n");
+    printf(">>");
+    scanf("%d", &resp);
+    if (resp == -99){
+        
+        printf("Nome do arquivo raiz já existente: \n");
+        printf(">>");
+        scanf("%s", raiz_aux);
+        printf("%s\n", raiz_aux);
+        strncpy(raiz, raiz_aux, 90);
+        printf("Arquivo carregado!\n");
+        
+    }else{
+        strcpy(raiz, "1.dat");
+        /** limpa arquivos antes de começar para garantir integridade do sistema **/
+        /** Opcional: não fazer isso e conseguir carregar dos arquivos. **/
+    
+        while (limpou == 0){
+            char aux [90];
+            sprintf(aux, "%d.dat", i);
+            limpou = remove(aux);    
+            i++;
+        }
+        // limpa arquivo auxiliar se existir
+        remove("T.dat");    
+        
+        FILE *fp = fopen("T.dat", "wb");
+        fwrite(&resp, sizeof(int), 1, fp);
+        fclose(fp);
+        resp = -1;
+        printf("t definido! Estamos prontos para começar...\n");
     }
     
-    char *raiz = "1.dat";
     do{
         printf("1 para inserir, 2 para remover, 3 para imprimir e -99 para sair.\n");
         printf(">>");
         scanf("%d", &resp);
         printf("\n");
         if(resp==-99){ break;
-        }else if()
-        
-        raiz = Insere_TAB_MS(raiz, resp, &cont);
-        printf("retornado : [ %s, cont : %d.dat] \n", raiz, cont);
-        Imprime_ms(raiz, 0);    
+        }else if(resp == 1){
+            while (resp != -99){
+                printf("Insira o valor que deseja inserir. -99 para voltar ao menu principal.\n");
+                printf(">>");
+                scanf("%d", &resp);
+                if(resp == -99) { resp = -1; break;}
+                raiz = Insere_TAB_MS(raiz, resp, &cont);
+            }
+        }else if(resp == 2){
+            while (resp != -99){
+                printf("Insira o valor que deseja remover. -99 para voltar ao menu principal.\n");
+                printf(">>");
+                scanf("%d", &resp);
+                if(resp == -99) { resp = -1; break;}
+                //remover(raiz, resp);
+            }
+        }else if(resp == 3){
+            printf("\n\t\t Mostrando arquivo raiz '%s'!!\n\n", raiz);
+            Imprime_ms(raiz, 0);    
+        }else {
+            printf("Valor inválido, tente novamente\n");
+        }
     }while(resp!=-99);
         
-    /** limpa arquivos antes de começar **/
+    /** limpa arquivos depois de finalizar **/
     i = 1;
     while (i <= cont){
         char aux [90];

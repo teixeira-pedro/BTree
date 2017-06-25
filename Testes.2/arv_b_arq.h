@@ -48,4 +48,4 @@ char *Divisao_TAB_MS(char *n_X,int i,char *n_Y,int *nome_atual);
 char *Insere_TAB_MS(char *n_T,int k,int *nome_atual);
 char *Insere_Nao_Completo_TAB_MS(char *n_X,int k,int *nome_atual);
 
-void remover(char *nArq, int ch, int t);
+void remover(char *nArq, int ch);

@@ -2,18 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "arv_b_arq.h"
-
-int pega_T(){
-  FILE *fp = fopen("T.dat", "rb");
-  int t = 0;
-  fread(&t, sizeof(int), 1, fp);
-  fclose(fp);
-  return t;
-}
-
+#define T 3
 
 TAB *Cria_no(){
-    int T = pega_T();
+    
     int i;
     TAB *n = (TAB *)malloc(sizeof(TAB));
     n->nchaves = 0;
@@ -83,7 +75,6 @@ void Libera_no(TAB *a){
 }
 
 TAB *recupera (char *nome){
-    int T = pega_T();
     FILE *fp = fopen (nome, "rb");
     if (!fp) return NULL;
     TAB *aux = Cria_no(2);
@@ -271,7 +262,6 @@ char *guarda(void *end_v, TAB *elem, int tipo){
 }
 
 char *Divisao_TAB_MS(char *n_X, int i, char *n_Y, int *nome_atual){
-    int T = pega_T();
     TAB *Z = Cria_no(T);    // Novo nó Z (direita do nó antigo)
     TAB *Y = recupera(n_Y); // T na chamada, nó antigo antes da divisão (direita)
     TAB *X = recupera(n_X); // S na chamada, "nó de cima"
@@ -315,7 +305,6 @@ char *Divisao_TAB_MS(char *n_X, int i, char *n_Y, int *nome_atual){
 }
 
 char *Insere_Nao_Completo_TAB_MS(char *n_X, int k, int *nome_atual){
-    int T = pega_T();
     TAB *X = recupera(n_X);
     int i = X->nchaves - 1;
     if(X->folha == 1){
@@ -354,7 +343,6 @@ char *Insere_Nao_Completo_TAB_MS(char *n_X, int k, int *nome_atual){
 }
 
 char *Insere_TAB_MS(char *n_A, int k, int *nome_atual){
-    int T = pega_T();
     if((!n_A) || (!nome_atual)) return NULL;
     TAB *A = Busca(n_A, k);
     //printf("buscou");
@@ -574,118 +562,154 @@ int remover(char *nArq, int ch){
         return 0;   
       }
     }
-        
-        /*
-        //--------CASOS 3
-        int i,j,w;
-        for(i=0;((i<arv->nchaves)||(arv->chave[i]<k));i++);// a chave buscada pode estar de i para trás
-        
-        quero deletar o 8
-                         i
-                         ↓
-           [|1||3||5||7| |9||#||#|]...
-                        ↑
-                       ←+ 8 está daqui pra lá
-        
-        if((arv->chave[i]!=k)&&(x->folha==0)){//se é nó interno e k não está ali
-          for(j=0;j<=i;j++){
-            TAB *f=pega_filho(arv,j);
-            if(f->nchaves==T-1){
-              for(w=0;w<=i;w++){
-                TAB *g=pega_filho(arv,u);
-                if(g->nchaves==T){
-                      //**********CASO 3A
-                      int k_filho_T=g->chave[0];
-                      for(i=0;i<g->nchaves;i++) if(i+1!=g->nchaves) g->chave[i]=g->chave[i+1];  
-                      g->nchaves--;//peguei a chave do filho q tem t chaves e cheguei todos pra trpás
-                      ///***TBC
-                      Libera_no(g);
-                      Libera_no(f);
-                      Libera_no(arv);
-                      remover(nArq,k);
-                }
-                if(g->nchaves==T-1){
-                      //**********CASO 3B
-                      Libera_no(g);
-                      Libera_no(f);
-                      Libera_no(arv);
-                      remover(nArq,k);
-                }
-              }
-            }
-          }
-        }
-*/
-        //verificar para filho
-    }
 }
 
-int main (){
+void main(){
+  
+    /** 
+       Legenda:
+        A	B	C	D	E	F	G	H	I	J	  K	  L	  M	  N	  O	  P	  Q	  R	  S	  T	  U	  V 	W 	X	  Y	  Z
+        1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	24	25	26
+    **/
     
-    int cont = 0;
-    int resp = -1;
-    int limpou = 0;
-    int i = 1;
-    char *raiz = "1.dat";
+    /** Recria árvore do caderno **/
+    /** Raiz **/
+    TAB *raiz = Cria_no();
+    printf("Arvore B\n");
+    printf("Inserindo P na raiz: \n");
+    raiz->chave[0] = 16;
+    raiz->nchaves = 1;
+    raiz->folha = 0;
+    raiz->filho[0] = "filho1.dat";
+    raiz->filho[1] = "filho2.dat";
+    Cria(raiz, "raiz.dat");
+    Libera_no(raiz);
     
-    /** limpa arquivos antes de começar para garantir integridade do sistema **/
-    /** Opcional: não fazer isso e conseguir carregar dos arquivos. **/
+    /** Filhos **/
+    TAB *filho1 = Cria_no();
+    TAB *filho2 = Cria_no();
     
-    while (limpou == 0){
-        char aux [90];
-        sprintf(aux, "%d.dat", i);
-        limpou = remove(aux);    
-        i++;
-    }
-    // limpa arquivo auxiliar se existir
-    remove("T.dat");    
+    printf("Inserindo C no filho 1: \n");
+    filho1->chave[0] = 3;
+    printf("Inserindo G no filho 1: \n");
+    filho1->chave[1] = 7;
+    printf("Inserindo M no filho 1: \n");
+    filho1->chave[2] = 13;
+    printf("Inserindo T no filho 2: \n");
+    filho2->chave[0] = 20;
+    printf("Inserindo X no filho 2: \n");
+    filho2->chave[1] = 24;
     
-    // define t
-    printf("Escolha seu t:\n");
-    printf(">>");
-    scanf("%d", &resp);
-    FILE *fp = fopen("T.dat", "wb");
-    fwrite(&resp, sizeof(int), 1, fp);
-    fclose(fp);
-    resp = -1;
-    printf("t definido! Estamos prontos para começar...\n");
-    do{
-        printf("1 para inserir, 2 para remover, 3 para imprimir e -99 para sair.\n");
-        printf(">>");
-        scanf("%d", &resp);
-        printf("\n");
-        if(resp==-99){ break;
-        }else if(resp == 1){
-            while (resp != -99){
-                printf("Insira o valor que deseja inserir. -99 para voltar ao menu principal.\n");
-                printf(">>");
-                scanf("%d", &resp);
-                if(resp == -99) { resp = -1; break;}
-                raiz = Insere_TAB_MS(raiz, resp, &cont);
-            }
-        }else if(resp == 2){
-            while (resp != -99){
-                printf("Insira o valor que deseja remover. -99 para voltar ao menu principal.\n");
-                printf(">>");
-                scanf("%d", &resp);
-                if(resp == -99) { resp = -1; break;}
-                remover(raiz, resp);
-            }
-        }else if(resp == 3){
-            Imprime_ms(raiz, 0);    
-        }else {
-            printf("Valor inválido, tente novamente\n");
-        }
-    }while(resp!=-99);
-        
-    /** limpa arquivos depois de finalizar **/
-    i = 1;
-    while (i <= cont){
-        char aux [90];
-        sprintf(aux, "%d.dat", i);
-        remove(aux);    
-        i++;
-    }
+    filho1->nchaves = 3;
+    filho1->folha = 0;
+    filho1->filho[0] = "neto1.dat";
+    filho1->filho[1] = "neto2.dat";
+    filho1->filho[2] = "neto3.dat";
+    filho1->filho[3] = "neto4.dat";
     
-    return 0;
+    filho2->nchaves = 2;
+    filho2->folha = 0;
+    filho2->filho[0] = "neto5.dat";
+    filho2->filho[1] = "neto6.dat";
+    filho2->filho[2] = "neto7.dat";
+    
+    Cria(filho1, "filho1.dat");
+    Cria(filho2, "filho2.dat");
+    
+    Libera_no(filho1);
+    Libera_no(filho2);
+    
+    /** Netos **/
+    TAB *neto1 = Cria_no();
+    TAB *neto2 = Cria_no();
+    TAB *neto3 = Cria_no();
+    TAB *neto4 = Cria_no();
+    TAB *neto5 = Cria_no();
+    TAB *neto6 = Cria_no();
+    TAB *neto7 = Cria_no();
+    
+    printf("Inserindo A no neto 1: \n");
+    neto1->chave[0] = 1;
+    printf("Inserindo B no neto 1: \n");
+    neto1->chave[1] = 2;
+    printf("Inserindo D no neto 2: \n");
+    neto2->chave[0] = 4;
+    printf("Inserindo E no neto 2: \n");
+    neto2->chave[1] = 5;
+    printf("Inserindo J no neto 3: \n");
+    neto3->chave[0] = 10;
+    printf("Inserindo K no neto 3: \n");
+    neto3->chave[1] = 11;
+    printf("Inserindo L no neto 3: \n");
+    neto3->chave[2] = 12;
+    printf("Inserindo N no neto 4: \n");
+    neto4->chave[0] = 14;
+    printf("Inserindo O no neto 4: \n");
+    neto4->chave[1] = 15;
+    printf("Inserindo Q no neto 5: \n");
+    neto5->chave[0] = 17;
+    printf("Inserindo R no neto 5: \n");
+    neto5->chave[1] = 18;
+    printf("Inserindo S no neto 5: \n");
+    neto5->chave[2] = 19;
+    printf("Inserindo U no neto 6: \n");
+    neto6->chave[0] = 21;
+    printf("Inserindo V no neto 6: \n");
+    neto6->chave[1] = 22;
+    printf("Inserindo Y no neto 7: \n");
+    neto7->chave[0] = 25;
+    printf("Inserindo Z no neto 7: \n");
+    neto7->chave[1] = 26;
+    
+    neto1->nchaves = 2;
+    neto1->folha = 1;
+    neto2->nchaves = 2;
+    neto2->folha = 1;
+    neto3->nchaves = 3;
+    neto3->folha = 1;
+    neto4->nchaves = 2;
+    neto4->folha = 1;
+    neto5->nchaves = 3;
+    neto5->folha = 1;
+    neto6->nchaves = 2;
+    neto6->folha = 1;
+    neto7->nchaves = 2;
+    neto7->folha = 1;
+    
+    Cria(neto1, "neto1.dat");
+    Cria(neto2, "neto2.dat");
+    Cria(neto3, "neto3.dat");
+    Cria(neto4, "neto4.dat");
+    Cria(neto5, "neto5.dat");
+    Cria(neto6, "neto6.dat");
+    Cria(neto7, "neto7.dat");
+    
+    Libera_no(neto1);
+    Libera_no(neto2);
+    Libera_no(neto3);
+    Libera_no(neto4);
+    Libera_no(neto5);
+    Libera_no(neto6);
+    Libera_no(neto7);
+    
+    printf("\n\t\tImprimindo...\t\n ");
+    Imprime_ms("raiz.dat", 0);
+    
+    printf("\n\t\t Removendo M (13)\t\n");
+    remover("filho1.dat", 13);
+    
+    printf("\n\t\tImprimindo...\t\n ");
+    Imprime_ms("raiz.dat", 0);
+    
+    printf("\n\t\t Removendo G (7)\t\n");
+    remover("filho1.dat", 7);
+    
+    printf("\n\t\tImprimindo...\t\n ");
+    Imprime_ms("raiz.dat", 0);
+    
+    printf("\n\t\t Removendo C (3)\t\n");
+    remover("filho1.dat", 3);
+    
+    printf("\n\t\tImprimindo...\t\n ");
+    Imprime_ms("raiz.dat", 0);
 }
