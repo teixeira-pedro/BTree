@@ -1,17 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "arv_b_arq.h"
+#define T 3
 
-
-TAB *Cria_no(int t){
+TAB *Cria_no(){
+    
     int i;
-    TAB *n=(TAB *)malloc(sizeof(TAB));
+    TAB *n = (TAB *)malloc(sizeof(TAB));
     n->nchaves = 0;
-    n->chave = (int*)malloc(sizeof(int)*((t*2)-1));
+    n->chave = (int*)malloc(sizeof(int)*((T*2)-1));
     n->folha = 1;
-    n->filho = (char **)malloc((t*2) * (sizeof(char *)));
-    for(i = 0; i < (t*2); i++) n->filho[i] = (char *) malloc(90*sizeof(char));
+    
+    n->filho = (char **)malloc((T*2) * (sizeof(char *)));
+    for(i = 0; i < (T*2); i++) n->filho[i] = (char *) malloc(90*sizeof(char));
     return n;
 }
 
@@ -41,13 +44,14 @@ char *Cria(TAB *no, char *nome){
     fwrite(&no -> folha, sizeof(int), 1, fp);                             //grava se é folha
     
     for(i = 0; i < no -> nchaves; i++) 
-        fwrite(&no->chave[i], sizeof(int), 1, fp);                       //grava chaves 
+        fwrite(&no->chave[i], sizeof(int), 1, fp);                       //grava chaves
+    
     for(i = 0; i <= no -> nchaves; i++){
         // copia a string pra aux pois queremos manipular para adicionar um "\n" no final para lermos mais tarde
         char aux [90];
         strcpy(aux, no->filho[i]);
-        aux[strlen(aux)] = '\n';
         aux[strlen(aux) + 1] = '\0';
+        aux[strlen(aux)] = '\n';
         fputs(aux, fp);                                                  // grava a string efetivamente
     }
     fclose(fp);                                                          //fecha o arq 
@@ -88,26 +92,6 @@ TAB *recupera (char *nome){
     return aux;
 }
 
-void imprime_data(TAB *a){
-    if(!a) {
-        printf("→//\n");
-        return;
-    }
-    int i;
-    printf("chaves → [");
-    for(i=0;i<a->nchaves;i++) printf("%d ",a->chave[i]);
-    printf("]\n");
-    printf("filhos → ");
-    if(!a->folha){
-        printf("[");
-        for(i=0;i<a->nchaves+1;i++) printf(" <<%s.dat>>  ",a->filho[i]);
-        printf("]");
-    }else{
-        printf("//");
-    }
-    printf("\n");
-}
-
 void Imprime(char *nome, int andar){
     if(!nome) return;                                   // vê se o arq existe
     TAB *a = recupera(nome);                            // recupera do arquivo
@@ -146,7 +130,7 @@ char *Busca_arq(char x[90], int ch){
     if( (i < resp->nchaves) && (ch == resp->chave[i]) ) return x;            //se achou retorna o endereço
     if(resp->folha) {
         Libera_no(resp);                                                     //mata da MP
-        return NULL;                                                         //se não tá ali e não tem filhos, acabou
+        return NULL;                                                         //se não Tá ali e não tem filhos, acabou
     }
     //char *tmp=resp->filho[i];
     char filho_i[90];
@@ -261,77 +245,194 @@ TAB *Busca(char* x, int ch){
     return Busca(filho_esq, ch);
 }
 
+char *guarda(void *end_v, TAB *elem, int tipo){
+    if((!end_v) || (!elem) || (tipo > 1) || (tipo < 0)) return NULL;
+    
+    char * resp = (char *) malloc (sizeof(char) * 90);
+    // isso já basta (além do outro retornar erro de compilação)
+    
+    if(tipo == 0){                                                      // é ponteiro pro contador de arquivo
+        int *tmp = (int *) end_v;
+        snprintf(resp, 89, "%d.dat", *tmp); 
+    }else{                                                              // é string
+        char *tmp=(char *) end_v;
+        strncpy(resp, tmp, 90);
+    }
+    Cria(elem, resp);
+    return resp;
+}
+
+char *Divisao_TAB_MS(char *n_X, int i, char *n_Y, int *nome_atual){
+    TAB *Z = Cria_no(T);    // Novo nó Z (direita do nó antigo)
+    TAB *Y = recupera(n_Y); // T na chamada, nó antigo antes da divisão (direita)
+    TAB *X = recupera(n_X); // S na chamada, "nó de cima"
+    
+    Z->nchaves = T - 1;     // mínimo de chaves
+    Z->folha = Y->folha;    // se o nó T que vai ser dividido é folha, então o novo Z (irmão dele) também vai ser
+    
+    int j;
+    for(j = 0; j < T - 1; j++) Z->chave[j] = Y->chave[j + T]; // copia os valores da direita do nó antigo
+    
+    if(Y->folha == 0){                                            // se Y(T) for nó interno
+        for(j=0; j < T; j++){
+            strcpy(Z->filho[j], Y->filho[j + T]);             // copia os filhos
+            free(Y->filho[j + T]);                            // libera o filho que acabou de copiar
+            Y->filho[j + T] = NULL;                           // seta o ponteiro pra nulo pra n dar problema
+        }
+    }
+    
+    Y -> nchaves = T - 1;                                     // o nó antigo passou a ter um número mínimo de chaves assim como seu novo irmão
+    n_Y = guarda(n_Y, Y, 1);                                  // atualiza nosso arquivo
+    free(n_Y);
+    
+    int aux = *nome_atual;                                    // Variável "global" da main para fazer um track dos arquivos e eles terem "ids"
+    aux++; 
+    *nome_atual = aux;
+    
+    char *n_Z;
+    n_Z = guarda(nome_atual, Z, 0);                             // faz o mesmo com Z
+    /// 'i' é o número do filho que vamos inserir no nó de cima. Vai ser 1 se o nó for novo
+    for(j = X->nchaves; j >= i; j--) X->filho[j + 1] = X->filho[j];
+    X->filho[i] = n_Z;
+    for(j = X->nchaves;j >= i; j--) X->chave[j] = X->chave[j-1];
+    X->chave[i - 1] = Y->chave[T - 1];
+    X->nchaves++;
+    n_X = guarda(n_X, X, 1);
+    Libera_no(X); Libera_no(Y); Libera_no(Z);
+    X = recupera(n_X);
+    Libera_no(X);
+    free(n_Z);
+    return n_X;
+}
+
+char *Insere_Nao_Completo_TAB_MS(char *n_X, int k, int *nome_atual){
+    TAB *X = recupera(n_X);
+    int i = X->nchaves - 1;
+    if(X->folha == 1){
+        while((i >= 0) && (k < X->chave[i])){
+            X->chave[i+1] = X->chave[i];
+            i--;
+        }
+        X->chave[i+1]=k;
+        X->nchaves++;
+        char *resp = guarda(n_X, X, 1);
+        Libera_no(X);
+        return resp;
+    }
+    while((i >= 0) && (k < X->chave[i])) i--;
+    i++;
+    FILE *fp = fopen(X->filho[i], "rb");
+    int X_filho_i_nchaves;
+    int u = fread(&X_filho_i_nchaves, sizeof(int), 1, fp);
+    if(u == -1){
+        Libera_no(X);
+        return n_X;
+    }
+    fclose(fp);
+    
+    if(X_filho_i_nchaves == ((2*T)-1)){
+        n_X = Divisao_TAB_MS(n_X, i+1, X->filho[i], nome_atual);
+        X = recupera(n_X);
+        if(k > X->chave[i]) i++;
+    }
+    
+    X->filho[i] = Insere_Nao_Completo_TAB_MS(X->filho[i], k, nome_atual);
+    char *resp = guarda(n_X, X, 1);
+    Libera_no(X);
+    //free(resp);
+    return resp;
+}
+
+char *Insere_TAB_MS(char *n_A, int k, int *nome_atual){
+    if((!n_A) || (!nome_atual)) return NULL;
+    TAB *A = Busca(n_A, k);
+    //printf("buscou");
+    if(A){                                                                      // já existe, sai
+        Libera_no(A);
+        return n_A;
+    }
+    FILE *fp = fopen(n_A, "rb");
+    int nchaves;
+    if(!fp){                                                                    // ...a árvore Tá nula a.k.a. nome do primeiro arquivo nao consta, cria raiz
+        A = Cria_no(T);
+        A->chave[0] = k;
+        A->nchaves = 1;
+        int aux = *nome_atual;                                                  // Variável "global" da main para fazer um track dos arquivos e eles terem "ids"
+        aux++; 
+        *nome_atual=aux; 
+        char *resp = guarda(nome_atual, A, 0);                                  // cria nó inicial e grava na MS
+        free(resp);
+        Libera_no(A);
+        return n_A;
+    }                                                                           // ... existe árvore
+    int u = fread(&nchaves, sizeof(int), 1, fp);
+    if(u == -1) {
+        fclose(fp);
+        return n_A;
+    }
+    fclose(fp);
+    
+    if(nchaves == ((2*T) - 1)){                                             //se T Tá cheio, prepara pra divisão
+        TAB *S = Cria_no(T);                                                //criando um nó novo, e colocando o atual cheio
+        S->nchaves = 0;                                                     //como seu primeiro filho
+        S->folha = 0;
+        S->filho[0] = n_A;
+        
+        int aux=*nome_atual;                                                  // Variável "global" da main para fazer um track dos arquivos e eles terem "ids"
+        aux++; 
+        *nome_atual=aux;
+        
+        char *n_S = guarda(nome_atual, S, 0);                                 // grava o nó preparatorio
+        char nn_S[90];
+        strncpy(nn_S, n_S, 90);                                               // copiamos para uma variável local pois "grava" aloca memória dinamicamente para n_S
+        free(n_S);
+        n_S = Divisao_TAB_MS(nn_S, 1, n_A, nome_atual);                    // manda dividi-lo
+        n_S = Insere_Nao_Completo_TAB_MS(n_S, k, nome_atual);              // insere na estrutura **aqui já grava!!!
+        Libera_no(S);
+        return n_S;
+    }
+    n_A = Insere_Nao_Completo_TAB_MS(n_A, k, nome_atual);                 // retorna ok!
+    Libera_no(A);
+    return n_A;
+}
 
 int main (){
     
-    /** Testa criar, salvar e carrega um arquivo raiz **/
-    TAB *raiz = Cria_no(2);
-    printf("Arvore B\n");
-    printf("Insira chave inicial: \n");
-    scanf("%d", &raiz->chave[0]);
-    printf("Insira chave segunda inicial: \n");
-    scanf("%d", &raiz->chave[1]);
-    raiz->nchaves = 2;
-    raiz->folha = 0;
-    raiz->filho[0] = "meufilho1.dat";
-    raiz->filho[1] = "meufilho2.dat";
-    raiz->filho[2] = "meufilho3.dat";
-    Cria(raiz, "minharaiz.dat");
-    Libera_no(raiz);
-    raiz = recupera("minharaiz.dat");
+    int cont = 0;
+    int resp = 3;
+    int limpou = 0;
+    int i = 1;
     
-    
-    /** Testa criar, salvar e carregar filhos do arquivo raiz criado **/
-    TAB *filho1 = Cria_no(2);
-    TAB *filho2 = Cria_no(2);
-    TAB *filho3 = Cria_no(2);
-    
-    printf("Insira chave do filho1: \n");
-    scanf("%d", &filho1->chave[0]);
-    printf("Insira chave do filho2: \n");
-    scanf("%d", &filho2->chave[0]);
-    printf("Insira chave do filho3: \n");
-    scanf("%d", &filho3->chave[0]);
-    
-    filho1-> nchaves = 1;
-    filho2-> nchaves = 1;
-    filho3-> nchaves = 1;
-    
-    filho1-> folha = 1;
-    filho2-> folha = 1;
-    filho3-> folha = 1;
-    
-    Cria(filho1, "meufilho1.dat");
-    Cria(filho2, "meufilho2.dat");
-    Cria(filho3, "meufilho3.dat");
-    
-    Libera_no(filho1);
-    Libera_no(filho2);
-    Libera_no(filho3);
-    
-    Libera_no(raiz);
-    
-    printf("\n\t\tImprimindo...\t\n ");
-    
-    /** Testa imprimir **/
-    Imprime_ms("minharaiz.dat", 0);
-    
-    
-    /** Testa a busca **/
-    int x;
-    while (x > 0){
-        printf("Insira a chave que quer buscar: (negativo apra sair do loop) \n");
-        scanf("%d", &x);
-        TAB *buscado = Busca("minharaiz.dat", x);
-        if (buscado) printf("A busca encontrou seu número!\n");
-        else printf("Número não encontrado =/\n");
-        if (x == 1) Imprime_ms("minharaiz.dat", 0);
+    /** limpa arquivos antes de começar **/
+    while (limpou == 0){
+        char aux [90];
+        sprintf(aux, "%d.dat", i);
+        limpou = remove(aux);    
+        i++;
     }
     
+    char *raiz = "1.dat";
+    printf("Insira valores, inserir -99 causará o encerramento;\n");
+    while(resp!=-99){
+        printf(">>");
+        scanf("%d", &resp);
+        printf("\n");
+        if(resp==-99) break;
+        raiz = Insere_TAB_MS(raiz, resp, &cont);
+        printf("retornado : [ %s, cont : %d.dat] \n", raiz, cont);
+        
+        Imprime_ms(raiz, 0);    
+        
+    }
     
-    
+    /** limpa arquivos antes de começar **/
+    i = 1;
+    while (i <= cont){
+        char aux [90];
+        sprintf(aux, "%d.dat", i);
+        remove(aux);    
+        i++;
+    }
     
     return 0;
 }
-
-

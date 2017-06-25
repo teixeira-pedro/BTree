@@ -18,8 +18,6 @@
 ***[PP-DÚVIDA]*** Após recuperar os nós dos arquivos, deve-se dar free neles ? R: Não, por que faria isso? Damos free quando não precisamos mais só. -pergola
 ***[PP-WARNING]*** possiveis bugs na questão dos endereços char dos filhos ... irei verificar[@ D2]
 ***[PP-DÚVIDA]*** cond de parada correta?? [@ D1]
-***[NQ-DÚVIDA]*** Verificar se isso funciona na função da Rosseti [@ D4]
-
 
  =====================================LOG=====================================
 */
@@ -263,12 +261,12 @@ void Imprime(char *nome, int andar){
 }
 
 void remover(char *nArq, int ch, int t){
-    FILE *fp = fopen(nArq, "rb");
-    if(!fp) exit(1);
+    if(!nArq){
+        printf("Erro no remover: Nome do arquivo vazio.\n");
+        return;
+    }
     TAB *arv = NULL;
-    int r = fread(arv, sizeof(TAB), 1,fp);
-    fclose(fp);
-    if(r != 1) return;
+    arv = recupera(nArq);
     int i;
     for(i = 0; ( (i < arv->nchaves) && (arv->chave[i]) ) < ch; i++);
     if( (i < arv->nchaves) && (ch == arv->chave[i]) ){ //CASOS 1, 2A, 2B e 2C
@@ -280,38 +278,57 @@ void remover(char *nArq, int ch, int t){
         y = pega_filho(arv, i); //Encontrar o predecessor k' de ch na árvore com raiz em y
         if(!y) {
           printf("Erro no remover: Erro ao ler filho y.\n");
+          Libera_no(arv);
+          Libera_no(y);
           return;
         }
         
         if( (!arv->folha) && (y->nchaves >= t) ){ //CASO 2A
           printf("\nCASO 2A\n");
-          while(!y->folha) y = pega_filho(y, y->nchaves);
+          while(!y->folha) y = pega_filho(y, y->nchaves); // Serve para preparar a função pro caso 3
           int temp = y->chave[y->nchaves-1]; //temp é k'
-          TAB *filho = pega_filho(arv, i);
+          char *filho = pega_filho_arq(nArq, i);
           if(!filho) {
-            printf("Erro no remover: Erro ao ler filho (Caso 2a).\n");
+            printf("Erro no remover: Filho inválido (Caso 2A).\n");
+            Libera_no(arv);
+            Libera_no(y);
             return;
           }
-          //filho = remover(filho, temp, t); //Eliminar recursivamente k' (comentei a linha pois estava atribuindo à filho uma função void)
-          remover(filho, temp, t); //Eliminar recursivamente k' (filho está errado, era pra ser um char* e filho é TAB*)
+          //filho = remover(filho, temp, t); //Eliminar recursivamente k' (comentei a linha pois estava atribuindo ao filho uma função void)
+          remover(filho, temp, t); //Eliminar recursivamente k'
           arv->chave[i] = temp; //Substitua ch por k' em x
           Cria(arv, nArq);
+          Libera_no(arv);
+          Libera_no(y);
+          return;
         }
         
         TAB *z = NULL;
         z = pega_filho(arv, i+1); //Encontrar o sucessor k' de k na árvore com raiz em z
         if(!z) {
           printf("Erro no remover: Erro ao ler filho z.\n");
+          Libera_no(arv);
+          Libera_no(z);
           return;
         }
         
         if( (!arv->folha) && (z->nchaves >= t) ){  //CASO 2B
           printf("\nCASO 2B\n");
-          while(!z->folha) z = pega_filho(z, 0);
+          while(!z->folha) z = pega_filho(z, 0); // Serve para preparar a função pro caso 3
           int temp = z->chave[0]; //temp é k'
-          z = remover(pega_filho(arv, i+1), temp, t); //Eliminar recursivamente k' [D4]
+          char *filho = pega_filho_arq(nArq, i+1);
+          if(!filho) {
+            printf("Erro no remover: Filho inválido (Caso 2B).\n");
+            Libera_no(arv);
+            Libera_no(z);
+            return;
+          }
+          remover(filho, temp, t); //Eliminar recursivamente k'
           arv->chave[i] = temp; // Substitua ch por k' em x
           Cria(arv, nArq);
+          Libera_no(arv);
+          Libera_no(z);
+          return;
         }
         if( (!arv->folha) && (z->nchaves == t-1) && (y->nchaves == t-1) ){ 
             //CASO 2C
