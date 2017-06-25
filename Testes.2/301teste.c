@@ -399,7 +399,7 @@ char *Insere_TAB_MS(char *n_A, int k, int *nome_atual){
 int main (){
     
     int cont = 0;
-    int resp = 3;
+    int resp = -1;
     int limpou = 0;
     int i = 1;
     
@@ -412,19 +412,19 @@ int main (){
     }
     
     char *raiz = "1.dat";
-    printf("Insira valores, inserir -99 causará o encerramento;\n");
-    while(resp!=-99){
+    do{
+        printf("1 para inserir, 2 para remover, 3 para imprimir e -99 para sair.\n");
         printf(">>");
         scanf("%d", &resp);
         printf("\n");
-        if(resp==-99) break;
+        if(resp==-99){ break;
+        }else if()
+        
         raiz = Insere_TAB_MS(raiz, resp, &cont);
         printf("retornado : [ %s, cont : %d.dat] \n", raiz, cont);
-        
         Imprime_ms(raiz, 0);    
+    }while(resp!=-99);
         
-    }
-    
     /** limpa arquivos antes de começar **/
     i = 1;
     while (i <= cont){

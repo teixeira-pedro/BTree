@@ -403,8 +403,8 @@ void remove_filho(char *nArq, char *filho){
   TAB *arv = recupera(nArq);
   int i, flag = 0;
   for(i = 0; i <= arv->nchaves; i++){ 
-    if (strcmp(filho, filho[j]) == 0) flag = 1;
-    if (flag) filho[j] == filho[j+1];
+    if (strcmp(filho, arv->filho[i]) == 0) flag = 1;
+    if (flag) arv->filho[i] == arv->filho[i+1];
   }
   Cria(arv, nArq);
   Libera_no(arv);
@@ -503,31 +503,36 @@ int remover(char *nArq, int ch){
         }
         if( (!arv->folha) && (z->nchaves == T-1) && (y->nchaves == T-1) ){ //CASO 2C
           printf("\nCASO 2C\n");
-          y->chave[y->nchaves] = ch;          //colocar ch ao final de filho[i]
+          y->chave[y->nchaves] = ch;          //colocar ch ao final de y
           int j;
           for(j = 0; j < T-1; j++)            //juntar as chaves de y com as de z
             y->chave[T+j] = z->chave[j];
-            
-          if((y->folha) && (!z->folha)){
-            y->folha = 0;
-            y->filho = z->filho;
-          }
-          if((!y->folha) && (!z->folha)){
-            
-          }
-          
+
+          //if((!y->folha) && (!z->folha)){
           for(j = 0; j <= T; j++)             //juntar os filhos de y com os de z
-            y->filho[T+j] = z->filho[j];
-            
+            strcpy(y->filho[T+j], z->filho[j]);
+          //}
             
           y->nchaves = 2*T-1;
           for(j=i; j < arv->nchaves-1; j++)   //remover ch de arv
             arv->chave[j] = arv->chave[j+1];
-          for(j=i+1; j <= arv->nchaves; j++)  //remover ponteiro para filho[i+1] - Sobrescrever o ponteiro que vai ser removido pelos ponteiros seguintes
-            arv->filho[j] = arv->filho[j+1];
+          for(j=i+1; j <= arv->nchaves; j++)  //sobrescrever o nome do filho que vai ser removido pelos nomes seguintes
+            strcpy(arv->filho[j], arv->filho[j+1]);
           arv->filho[j] = NULL;               //"remover" o último filho que seria de ninguém
           arv->nchaves--;
-          arv->filho[i] = remover(arv->filho[i], ch, t);
+          
+          Cria(arv, nArq);
+          Libera_no(arv);
+          char *filhoY = pega_filho_arq(nArq, i);
+          Cria(y, filhoY);
+          Libera_no(y);
+          char *filhoZ = pega_filho_arq(nArq, i+1);
+          Libera_no(z);
+          Libera(filhoZ);
+          
+          int r = remover(filhoY, ch); // remover recursivamente a ch de y (o z deixa de existir)
+          if(r == 1) remove_filho(nArq, filhoY);
+          if(r == 2) return 2;
           return 0;   
         }
         
@@ -576,7 +581,8 @@ void main(){
     
     /** Recria árvore do caderno **/
     /** Raiz **/
-    TAB *raiz = Cria_no();
+    int t = 3;
+    TAB *raiz = Cria_no(t);
     printf("Arvore B\n");
     printf("Inserindo P na raiz: \n");
     raiz->chave[0] = 16;
@@ -588,8 +594,8 @@ void main(){
     Libera_no(raiz);
     
     /** Filhos **/
-    TAB *filho1 = Cria_no();
-    TAB *filho2 = Cria_no();
+    TAB *filho1 = Cria_no(t);
+    TAB *filho2 = Cria_no(t);
     
     printf("Inserindo C no filho 1: \n");
     filho1->chave[0] = 3;
@@ -622,13 +628,13 @@ void main(){
     Libera_no(filho2);
     
     /** Netos **/
-    TAB *neto1 = Cria_no();
-    TAB *neto2 = Cria_no();
-    TAB *neto3 = Cria_no();
-    TAB *neto4 = Cria_no();
-    TAB *neto5 = Cria_no();
-    TAB *neto6 = Cria_no();
-    TAB *neto7 = Cria_no();
+    TAB *neto1 = Cria_no(t);
+    TAB *neto2 = Cria_no(t);
+    TAB *neto3 = Cria_no(t);
+    TAB *neto4 = Cria_no(t);
+    TAB *neto5 = Cria_no(t);
+    TAB *neto6 = Cria_no(t);
+    TAB *neto7 = Cria_no(t);
     
     printf("Inserindo A no neto 1: \n");
     neto1->chave[0] = 1;
