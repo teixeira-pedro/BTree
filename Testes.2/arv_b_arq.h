@@ -32,7 +32,6 @@ void Libera(char *nome); //OK
 void Imprime(char *nome, int andar);//ALTERAR
 TAB *Busca(char* x, int ch);//testar
 
-TAB *Divisao(char *n_x,TAB *x, int i,char *n_y, TAB* y, int t,int *nome_atual);//TESTAR
 TAB *Insere_Nao_Completo(char *n_x, int k,int *nome_atual);//testar
 TAB *Insere(char *n_T, int k, int *nome_atual);//testar
 
@@ -45,7 +44,7 @@ TAB *Divide_MS(char *nome);
 
 char *guarda(void *end_v,TAB *elem,int tipo);
 char *Divisao_TAB_MS(char *n_X,int i,char *n_Y,int *nome_atual);
-char *Insere_TAB_MS(char *n_T,int k,int *nome_atual);
+char *Insere_TAB_MS(char *n_A,int k,int *nome_atual);
 char *Insere_Nao_Completo_TAB_MS(char *n_X,int k,int *nome_atual);
 
-void remover(char *nArq, int ch);
+int remover(char *nArq, int ch); //testado casos 1 e 2

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "arv_b_arq.h"
 
 int pega_T(){
@@ -407,6 +406,227 @@ char *Insere_TAB_MS(char *n_A, int k, int *nome_atual){
     Libera_no(A);
     return n_A;
 }
+
+void remove_filho(char *nArq, char *filho){
+  if(!nArq || !filho){
+    printf("Erro no remove_filho: Nome do arquivo ou do filho inválido.\n");
+    return;
+  }
+  TAB *arv = recupera(nArq);
+  int i, flag = 0;
+  for(i = 0; i <= arv->nchaves; i++){ 
+    if (strcmp(filho, arv->filho[i]) == 0) flag = 1;
+    if (flag) arv->filho[i] == arv->filho[i+1];
+  }
+  Cria(arv, nArq);
+  Libera_no(arv);
+}
+
+int remover(char *nArq, int ch){
+  int T = pega_T(); // <- pega o T do arquivo auxiliar, definida na main inicialmente.
+  /**
+    Retornos:
+    0 - OK!
+    1 - Precisa tirar o nome do filho da lista
+    2 - Erro
+  **/
+  
+    if(!nArq){
+        printf("Erro no remover: Nome do arquivo vazio.\n");
+        return 2;
+    }
+    printf("\nRemovendo %d de %s...\n", ch, nArq);
+    TAB *arv = NULL;
+    arv = recupera(nArq);
+    printf("Recuperou %s.\n", nArq);
+    int i;
+    printf("Pegando i...\n");
+    for(i = 0; (i < arv->nchaves) && (arv->chave[i] < ch); i++);
+    printf("i = %d.\n", i);
+    
+    if( (i < arv->nchaves) && (ch == arv->chave[i]) ){ //CASOS 1, 2A, 2B e 2C
+      if(arv->folha){  //CASO 1
+        printf("\nCASO 1\n");
+        int j;
+        for(j=i; j<arv->nchaves-1;j++) arv->chave[j] = arv->chave[j+1]; //Sobreescreve a chave a ser removido pelas próximas chaves
+        arv->nchaves--;
+        if(arv->nchaves == 0){
+          Libera_no(arv);
+          Libera(nArq);
+          return 1;
+        }
+        Cria(arv, nArq);
+        Libera_no(arv);
+        return 0;
+      }
+      printf("Não é Caso 1.\n");
+      
+      TAB *y = NULL;
+      y = pega_filho(arv, i); //Encontrar o predecessor k' de ch na árvore com raiz em y
+      if(!y) {
+        printf("Erro no remover: Erro ao ler filho y.\n");
+        Libera_no(arv);
+        Libera_no(y);
+        return 2;
+      }
+      printf("Pegou filho y.\n");
+      
+      if( (!arv->folha) && (y->nchaves >= T) ){ //CASO 2A
+        printf("\nCASO 2A\n");
+        while(!y->folha) y = pega_filho(y, y->nchaves); // Serve para preparar a função pro caso 3
+        int temp = y->chave[y->nchaves-1]; //temp é k'
+        char *filho = pega_filho_arq(nArq, i);
+        if(!filho) {
+          printf("Erro no remover: Filho inválido (Caso 2A).\n");
+          Libera_no(arv);
+          Libera_no(y);
+          return 2;
+        }
+        arv->chave[i] = temp; //Substitua ch por k' em x
+        Cria(arv, nArq);
+        Libera_no(arv);
+        Libera_no(y);
+        int r = remover(filho, temp); //Eliminar recursivamente k'
+        if(r == 1) remove_filho(nArq, filho);
+        if(r == 2) return 2;
+        return 0;
+      }
+      printf("Não é caso 2A.\n");
+      
+      TAB *z = NULL;
+      z = pega_filho(arv, i+1); //Encontrar o sucessor k' de k na árvore com raiz em z
+      if(!z) {
+        printf("Erro no remover: Erro ao ler filho z.\n");
+        Libera_no(arv);
+        Libera_no(z);
+        return 2;
+      }
+      printf("Pegou filho z.\n");
+      
+      if( (!arv->folha) && (z->nchaves >= T) ){  //CASO 2B
+        printf("\nCASO 2B\n");
+        while(!z->folha) z = pega_filho(z, 0); // Serve para preparar a função pro caso 3
+        int temp = z->chave[0]; //temp é k'
+        char *filho = pega_filho_arq(nArq, i+1);
+        if(!filho) {
+          printf("Erro no remover: Filho inválido (Caso 2B).\n");
+          Libera_no(arv);
+          Libera_no(z);
+          return 2;
+        }
+        arv->chave[i] = temp; // Substitua ch por k' em x
+        Cria(arv, nArq);
+        Libera_no(arv);
+        Libera_no(z);
+        int r = remover(filho, temp); //Eliminar recursivamente k'
+        if(r == 1) remove_filho(nArq, filho);
+        if(r == 2) return 2;
+        return 0;
+      }
+      printf("Não é caso 2B.\n");
+      
+      if( (!arv->folha) && (z->nchaves == T-1) && (y->nchaves == T-1) ){ //CASO 2C
+        printf("\nCASO 2C\n");
+        y->chave[y->nchaves] = ch;          //colocar ch ao final de y
+        printf("Colocou ch no final de y.\n");
+        int j;
+        for(j = 0; j < T-1; j++)            //juntar as chaves de y com as de z
+          y->chave[T+j] = z->chave[j];
+        printf("Juntou as chaves de y com as de z.\n");
+
+        //if((!y->folha) && (!z->folha)){
+        for(j = 0; j < T; j++){             //juntar os filhos de y com os de z
+          strcpy(y->filho[T+j], z->filho[j]);
+          
+        }
+        printf("Juntou os filhos de y com os de z.\n");
+        //}
+          
+        y->nchaves = 2*T-1;
+        for(j=i; j < arv->nchaves-1; j++)   //remover ch de arv
+          arv->chave[j] = arv->chave[j+1];
+        printf("Removeu %d de %s.\n", ch, nArq);          
+
+        char filho_a_remover[90];
+        strcpy(filho_a_remover, arv->filho[i+1]);
+        
+        printf("\nÁrvore nchaves: %d\n", arv->nchaves);
+        
+        for(j=i+1; j < arv->nchaves; j++){  //sobrescrever o nome do filho que vai ser removido pelos nomes seguintes
+          printf("Sobrescrevendo %s por %s\n", arv->filho[j], arv->filho[j+1]);
+          strcpy(arv->filho[j], arv->filho[j+1]);
+          printf("j = %d\n", j);
+        }
+        arv->filho[j+1] = NULL;               //"remover" o último filho que seria de ninguém
+        printf("Removeu o filho z.\n");
+        arv->nchaves--;
+        
+        Cria(arv, nArq);
+        Libera_no(arv);
+        printf("Liberou %s.\n", nArq);
+        char *filhoY = pega_filho_arq(nArq, i);
+        Cria(y, filhoY);
+        Libera_no(y);
+        printf("Liberou %s.\n", filhoY);
+        Libera_no(z);
+        printf("Nome do filho a ser removido: %s.\n", filho_a_remover);
+        TAB* filho = recupera(filho_a_remover);
+        Libera_no(filho);
+        remove(filho_a_remover);
+        //Libera(filho_a_remover);
+        
+        
+        int r = remover(filhoY, ch); // remover recursivamente a ch de y (o z deixa de existir)
+        if(r == 1) remove_filho(nArq, filhoY);
+        if(r == 2) return 2;
+        return 0;   
+      }
+    }
+        
+        /*
+        //--------CASOS 3
+        int i,j,w;
+        for(i=0;((i<arv->nchaves)||(arv->chave[i]<k));i++);// a chave buscada pode estar de i para trás
+        
+        quero deletar o 8
+                         i
+                         ↓
+           [|1||3||5||7| |9||#||#|]...
+                        ↑
+                       ←+ 8 está daqui pra lá
+        
+        if((arv->chave[i]!=k)&&(x->folha==0)){//se é nó interno e k não está ali
+          for(j=0;j<=i;j++){
+            TAB *f=pega_filho(arv,j);
+            if(f->nchaves==T-1){
+              for(w=0;w<=i;w++){
+                TAB *g=pega_filho(arv,u);
+                if(g->nchaves==T){
+                      //**********CASO 3A
+                      int k_filho_T=g->chave[0];
+                      for(i=0;i<g->nchaves;i++) if(i+1!=g->nchaves) g->chave[i]=g->chave[i+1];  
+                      g->nchaves--;//peguei a chave do filho q tem t chaves e cheguei todos pra trpás
+                      ///***TBC
+                      Libera_no(g);
+                      Libera_no(f);
+                      Libera_no(arv);
+                      remover(nArq,k);
+                }
+                if(g->nchaves==T-1){
+                      //**********CASO 3B
+                      Libera_no(g);
+                      Libera_no(f);
+                      Libera_no(arv);
+                      remover(nArq,k);
+                }
+              }
+            }
+          }
+        }
+*/
+        //verificar para filho
+    }
+
 int main (){
     
     int cont = 0;
@@ -470,7 +690,7 @@ int main (){
                 printf(">>");
                 scanf("%d", &resp);
                 if(resp == -99) { resp = -1; break;}
-                //remover(raiz, resp);
+                remover(raiz, resp);
             }
         }else if(resp == 3){
             printf("\t\t Mostrando arquivo raiz '%s'!!\n\n", raiz);
